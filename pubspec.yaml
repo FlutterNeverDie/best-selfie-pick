@@ -1,0 +1,95 @@
+name: selfie_pick
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.2
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+
+  # utill
+  flutter_screenutil: ^5.9.3
+  go_router: ^16.1.0
+  logger: ^2.4.0
+  another_flushbar: ^1.12.32
+  font_awesome_flutter: ^10.9.1
+
+
+  #firebase / fcm
+  firebase_core: ^4.2.1
+  firebase_auth: ^6.1.2
+  cloud_firestore: ^6.1.0
+  firebase_messaging: ^16.0.4
+  flutter_local_notifications: ^19.5.0
+
+  # images / icon
+  flutter_svg: ^2.2.0
+  cached_network_image: ^3.4.1
+  image_picker: ^1.2.0
+  flutter_image_compress: ^2.4.0
+
+  # web
+  url_launcher: ^6.3.2
+
+  #network
+  http: ^1.6.0
+  dio: ^5.9.0
+
+  #data
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.5.3
+
+  # etc
+  permission_handler: ^12.0.1
+  flutter_riverpod: ^2.6.1
+
+
+  # sns login
+  google_sign_in: ^7.1.1
+  sign_in_with_apple: ^7.0.1
+  kakao_flutter_sdk: ^1.9.7+3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/fwordList.txt
+    - assets/json/agreement.json
+    - assets/image/
+    - assets/image/splash/
+    - assets/config/.env
+
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: assets/fonts/Pretendard-Light.otf
+          weight: 300
+        - asset: assets/fonts/Pretendard-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Pretendard-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Pretendard-SemiBold.otf
+          weight: 600
