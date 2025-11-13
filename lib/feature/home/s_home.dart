@@ -10,7 +10,7 @@ import '../my_page/s_my_page.dart';
 import '../rank/s_ranking.dart';
 // TODO: 실제 화면 파일 import
 
-final pageIndexProvider = StateProvider<int>((ref) => 1); // 초기값은 '랭킹/투표' (1)
+final pageIndexProvider = StateProvider<int>((ref) => 0);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});

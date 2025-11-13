@@ -57,14 +57,43 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
   // --- 🎯 단계별 핸들러 ---
 
   // 1단계 핸들러: 이메일/비밀번호 입력 후 2단계로 이동
+// 1단계 핸들러: 이메일/비밀번호 입력 후 2단계로 이동
   Future<void> _handleEmailPasswordSubmit() async {
+    // 1. Form 유효성 검증
     if (!_formKey.currentState!.validate()) return;
 
-    // 입력 유효성 검증 성공 시 2단계로 이동 (인증 단계는 생략)
-    setState(() {
-      _currentStep = 2;
-    });
-    _showMessage('비밀번호 설정 완료. 회원가입에 필요한 필수 정보를 입력해주세요.');
+    final email = _emailController.text.trim();
+
+    // 2. AuthNotifier의 로딩 상태를 사용하여 버튼 비활성화 (선택 사항)
+    final notifier = ref.read(authProvider.notifier);
+
+    try {
+      // 3. 🎯 이메일 중복 확인 (Firestore 기반)
+      final bool emailNotExists = await notifier.checkEmailAvailability(email);
+
+      if (emailNotExists) {
+        // 4. 입력 유효성 및 중복 검증 성공 시 2단계로 이동
+        setState(() {
+          _currentStep = 2;
+        });
+        _showMessage('회원가입에 필요한 필수 정보를 입력해주세요.');
+      }else{
+
+        final errorMsg = ref.read(authProvider).error;
+
+        // 중복되는 이메일이 발견된 경우
+        _showMessage(errorMsg ?? '시스템 오류');
+        return; // 다음 단계로 넘어가지 않습니다.
+
+      }
+
+    } catch (e) {
+      // 중복 확인 중 발생한 네트워크 등의 오류 처리
+      _showMessage('중복 확인 중 오류 발생: ${e.toString().split(':').last.trim()}');
+    } finally {
+      // 로딩 상태를 최종적으로 해제합니다.
+      notifier.state = notifier.state.copyWith(isLoading: false);
+    }
   }
 
   // 2단계 핸들러: 최종 회원가입 (지역, 성별 설정)

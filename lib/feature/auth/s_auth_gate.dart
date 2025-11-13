@@ -27,7 +27,6 @@ class AuthGateScreen extends ConsumerWidget {
 
           // 로그아웃 상태: 회원가입/로그인 화면으로 이동 (경로: /signup)
           context.go(SignupScreen.routeName);
-          ref.read(authProvider.notifier).signOut();
 
         } else {
 

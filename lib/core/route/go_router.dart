@@ -21,6 +21,8 @@ final GoRouter router = GoRouter(
       // ⭐️ 디버그 시작 (한국어)
       debugPrint('🚦 [라우터 리디렉션 확인] 목표 경로: ${state.uri.toString()}');
 
+
+
       // 1. Riverpod 컨테이너 읽기 (ProviderScope.containerOf(context) 사용)
       final providerContext = ProviderScope.containerOf(context);
 
@@ -28,6 +30,11 @@ final GoRouter router = GoRouter(
       final authState = providerContext.read(authProvider);
       final isLoggedIn = authState.user != null;
       final isProfileIncomplete = authState.user?.isProfileIncomplete == true;
+
+      if (authState.isLoading) {
+        debugPrint('   -> 결과: 로딩 중. 리디렉션 대기 (null)');
+        return null;
+      }
 
       // 현재 이동하려는 경로 (path)
       final currentPath = state.uri.toString();

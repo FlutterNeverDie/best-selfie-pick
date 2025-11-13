@@ -34,7 +34,6 @@ class AuthNotifier extends Notifier<AuthState> {
     if (currentUser == null) {
 
       debugPrint('auth에 사용자가 없음');
-
       // 로그아웃 상태 확정
       state = AuthState(isLoading: false);
       return;
@@ -58,14 +57,53 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   /// 3. 이메일 로그인 함수 (UI에서 호출)
-  Future<void> signIn(String email, String password) async {
+  Future<bool> signIn(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final userModel = await _repository.signIn(email: email, password: password);
       state = state.copyWith(user: userModel, isLoading: false);
+      return true; // 🎯 로그인 성공
+    } on FirebaseAuthException catch (e) {
+
+      print('e : ${e.toString()}');
+
+      // 🎯 FirebaseAuthException 발생 시 코드를 분석하여 메시지 변환
+      String message = '로그인에 실패했습니다. 다시 시도해 주세요.';
+
+      switch (e.code) {
+        case 'user-not-found':
+        case 'user-data-missing':
+          message = '가입되지 않은 이메일이거나 사용자 정보를 찾을 수 없습니다.';
+          break;
+        case 'wrong-password':
+        case 'INVALID_LOGIN_CREDENTIALS':
+        case 'invalid-credential':
+          message = '비밀번호가 일치하지 않습니다. 다시 확인해 주세요.';
+          break;
+        case 'invalid-email':
+          message = '유효하지 않은 이메일 형식입니다.';
+          break;
+        case 'user-disabled':
+          message = '사용이 정지된 계정입니다. 관리자에게 문의하세요.';
+          break;
+        case 'too-many-requests':
+          message = '로그인 시도 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+          break;
+        case 'network-request-failed':
+          message = '네트워크 연결 상태를 확인해 주세요.';
+          break;
+        default:
+          message = '로그인 실패: ${e.message ?? e.code}';
+          break;
+      }
+
+      // AuthState에 사용자 친화적인 에러 메시지 저장
+      state = state.copyWith(isLoading: false, error: message);
+      return false; // 🎯 로그인 실패 (예외 처리 완료)
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-      rethrow;
+      // 기타 알 수 없는 오류 처리
+      state = state.copyWith(isLoading: false, error: '로그인 중 알 수 없는 오류가 발생했습니다.');
+      return false; // 🎯 로그인 실패
     }
   }
 
@@ -107,6 +145,7 @@ class AuthNotifier extends Notifier<AuthState> {
         email: state.user!.email,
         region: region,
         gender: gender,
+
       );
 
       // 상태 업데이트 -> isProfileIncomplete = false가 되면서 AuthGate가 /home으로 리디렉션
@@ -187,6 +226,40 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 9. error 리셋
   void resetError() {
     state = state.copyWith(error: null);
+  }
+
+
+
+  /// 10. 이메일 중복 확인 함수 (Repository 위임 및 상태 처리)
+  Future<bool> checkEmailAvailability(String email) async {
+    // 중복 확인 전에 에러를 리셋합니다.
+    state = state.copyWith(error: null);
+
+    try {
+      // AuthRepo의 새로운 checkIfEmailExists 호출
+      final status = await _repository.checkIfEmailExists(email);
+
+      switch (status) {
+        case EmailCheckStatus.available:
+          return true; // 사용 가능 (중복 아님)
+
+        case EmailCheckStatus.emailAlreadyInUse:
+        // 일반 이메일 계정 중복
+        // AuthState에 에러 메시지 설정
+          state = state.copyWith(error: '이미 해당 이메일로 가입된 계정이 존재합니다.');
+          return false; // 사용 불가 (중복)
+
+        case EmailCheckStatus.socialAccountFound:
+        // 💡 소셜 로그인 계정 중복
+        // AuthState에 소셜 계정임을 안내하는 에러 메시지 설정
+          state = state.copyWith(error: '해당 이메일은 소셜 로그인으로 가입된 계정입니다.\n해당 소셜 로그인 버튼으로 진행해 주세요.');
+          return false; // 사용 불가 (소셜 계정 중복)
+      }
+    } catch (e) {
+      // 중복 확인 자체에서 오류가 발생했을 경우 (네트워크 등)
+      state = state.copyWith(error: '이메일 중복 확인 중 오류 발생: ${e.toString()}');
+      rethrow;
+    }
   }
 
 

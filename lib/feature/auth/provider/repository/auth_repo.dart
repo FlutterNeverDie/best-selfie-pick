@@ -1,8 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:selfie_pick/model/m_user.dart';
+
+
+enum EmailCheckStatus {
+  available,        // 사용 가능
+  emailAlreadyInUse, // 이메일/비밀번호 가입 계정 중복
+  socialAccountFound, // 소셜 로그인 계정 발견
+}
 
 // 1. AuthRepo Provider 정의
 final authRepoProvider = Provider.autoDispose((ref) {
@@ -21,24 +29,6 @@ class AuthRepo {
 
   static const String _usersCollection = 'users';
 
-  /// 7. Firestore에 UserModel 문서가 없으면 초기 문서를 생성합니다.
-  Future<void> _ensureUserDocumentExists(User user) async {
-    final userDocRef = _firestore.collection(_usersCollection).doc(user.uid);
-    final docSnapshot = await userDocRef.get();
-
-    // Firestore에 문서가 없으면 초기 UserModel 생성
-    // if (!docSnapshot.exists) {
-    //   // UserModel.initial을 사용하여 필수 필드를 'NotSet' 상태로 초기화
-    //   final newUser = UserModel.initial(uid: user.uid, email: user.email ?? 'social_user_${user.uid}@temp.com');
-    //   await userDocRef.set(newUser.toMap());
-    //   print('Firestore: New initial user document created for ${user.uid}');
-    // }
-    // 🎯 수정: 첫 소셜 로그인이어도 문서 생성을 건너뜁니다.
-    // Notifier가 ProfileIncomplete 상태를 감지하여 ProfileSetup 화면으로 리디렉션하도록 유도합니다.
-    if (!docSnapshot.exists) {
-      print('Firestore: Document does not exist for ${user.uid}. Skipping initial creation.');
-    }
-  }
 
   /// 2. 이메일 회원가입 로직 (Firebase Auth & Firestore 데이터 저장)
   Future<UserModel> signUp({
@@ -48,7 +38,6 @@ class AuthRepo {
     required String gender,
   }) async {
 
-    print('email : $email, password : $password, region : $region, gender : $gender');
 
     try {
       // 1. Firebase Auth 사용자 생성
@@ -90,6 +79,8 @@ class AuthRepo {
         password: password,
       );
 
+      print('userCredential : $userCredential');
+
       final uid = userCredential.user!.uid;
       // 소셜 로그인과 달리 이메일 가입은 signUp 단계에서 UserModel이 생성되므로,
       // 여기서는 Firestore에서 로드만 시도합니다.
@@ -125,6 +116,7 @@ class AuthRepo {
         region: region,
         regionUpdatedAt: DateTime.now(),
         fcmToken: null,
+        isSocialLogin: true
       );
 
       // 2. Firestore 저장 (최종 문서 생성)
@@ -151,8 +143,6 @@ class AuthRepo {
 
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
-
-      await _ensureUserDocumentExists(user);
 
       final loadedUser = await _fetchUserModel(user.uid);
 
@@ -221,7 +211,7 @@ class AuthRepo {
   Future<UserModel?> _fetchUserModel(String uid) async {
     final doc = await _firestore.collection(_usersCollection).doc(uid).get();
 
-    print('doc : $doc');
+    debugPrint('doc ${doc}');
 
     if (!doc.exists) {
       // Firestore 데이터가 없으면 Firebase Auth는 있지만 앱 데이터가 없는 경우
@@ -233,5 +223,43 @@ class AuthRepo {
     print('result : $result');
 
     return  result;
+  }
+
+
+  /// 11. 특정 이메일 주소로 등록된 인증 방법이 있는지 확인 (중복 확인)
+
+
+
+// AuthRepo 클래스 내부의 checkIfEmailExists 메서드 수정
+  Future<EmailCheckStatus> checkIfEmailExists(String emailAddress) async {
+  try {
+  // 1. Firestore에서 이메일 일치 문서 조회
+  final QuerySnapshot result = await _firestore
+      .collection(_usersCollection)
+      .where('email', isEqualTo: emailAddress)
+      .limit(1)
+      .get();
+
+  // 2. 문서가 없으면 사용 가능
+  if (result.docs.isEmpty) {
+  return EmailCheckStatus.available;
+  }
+
+  // 3. 문서가 발견된 경우, isSocialLogin 필드 확인
+  final userData = result.docs.first.data() as Map<String, dynamic>;
+  // Firestore에 해당 필드가 없으면 기본적으로 false로 간주
+  final isSocial = userData['isSocialLogin'] ?? false;
+
+  if (isSocial) {
+  return EmailCheckStatus.socialAccountFound;
+  } else {
+  return EmailCheckStatus.emailAlreadyInUse;
+  }
+
+  } catch (e) {
+  // 조회 중 오류 발생 (권한/네트워크 등)
+  print('Firestore lookup error: $e');
+  throw Exception('Failed to check email existence in Firestore: $e');
+  }
   }
 }

@@ -41,18 +41,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    try {
-      // 1. AuthNotifier를 통해 로그인 로직 호출
-      await ref.read(authProvider.notifier).signIn(email, password);
+    // Notifier가 로딩 상태를 내부적으로 관리하므로, UI는 단순히 결과만 받습니다.
+    // try-catch 블록을 제거하고 bool 결과를 직접 처리합니다.
 
-      // 2. 성공 시: AuthGate가 상태 변화를 감지하여 홈으로 리디렉션함.
-      if (context.mounted) {
-        // NOTE: 로그인 성공 후 홈으로 이동 (AuthGate를 보조)
+    final bool success = await ref.read(authProvider.notifier).signIn(email, password);
+
+    if (context.mounted) {
+      if (success) {
+        // 🎯 로그인 성공
+        // NOTE: AuthGate가 상태 변화를 감지하여 /home으로 리디렉션함.
+        // context.go('/home'); 을 통해 AuthGate의 역할을 보조합니다.
         context.go('/home');
+      } else {
+        final msg = ref.read(authProvider).error;
+        // 🎯 로그인 실패
+        _showMessage(msg ?? '시스템 오류');
       }
-    } catch (e) {
-      // 에러 메시지는 UI 하단에 표시되거나 _showMessage로 즉시 알림
-      _showMessage('로그인 실패: ${e.toString().split(':').last.trim()}');
     }
   }
 
@@ -184,7 +188,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                       ),
                       SizedBox(height: 8.h),
-                      // 2. 비밀번호 찾기 링크
+             /*         // 2. 비밀번호 찾기 링크
                       _buildLinkItem(
                         prompt: '비밀번호를 잊으셨나요?',
                         actionText: '비밀번호 찾기',
@@ -192,7 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           _showMessage('비밀번호 찾기 기능 구현 필요');
                           // TODO: 비밀번호 찾기 화면 경로로 이동
                         },
-                      ),
+                      ),*/
                     ],
                   ),
 
