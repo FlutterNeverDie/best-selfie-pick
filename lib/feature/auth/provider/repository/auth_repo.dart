@@ -212,8 +212,6 @@ class AuthRepo {
   Future<UserModel?> _fetchUserModel(String uid) async {
     final doc = await _firestore.collection(_usersCollection).doc(uid).get();
 
-    debugPrint('doc ${doc}');
-
     if (!doc.exists) {
       // Firestore 데이터가 없으면 Firebase Auth는 있지만 앱 데이터가 없는 경우
       return null;
@@ -221,7 +219,6 @@ class AuthRepo {
 
     final UserModel result = UserModel.fromMap(doc.data()!);
 
-    print('result : $result');
 
     return result;
   }

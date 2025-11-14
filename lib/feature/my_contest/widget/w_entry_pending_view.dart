@@ -123,6 +123,7 @@ class WEntryPendingView extends ConsumerWidget {
                             fontWeight: FontWeight.bold,
                             color: AppColor.primary,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

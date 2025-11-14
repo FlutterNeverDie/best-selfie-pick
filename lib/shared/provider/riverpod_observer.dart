@@ -12,7 +12,12 @@ class RiverpodObserver extends ProviderObserver {
     'staffCallRepoProvider',
     'areaFocusProvider',
     'childFocusProvider',
+
+    // 인증
     'authRepoProvider',
+    'authProvider[인증]',
+
+
   };
 
   /// Provider 로그 출력 여부 확인

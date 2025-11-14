@@ -11,87 +11,110 @@ import '../../app.dart';
 import '../../feature/auth/provider/auth_notifier.dart';
 import '../../feature/singup/s_profile_setup.dart';
 
+
+const bool shouldShowRedirectDebug = false; // 디버그 출력을 끄려면 false로 변경
+
 final GoRouter router = GoRouter(
   navigatorKey: App.globalNavigatorKey,
   initialLocation: AuthGateScreen.routeName,
   routes: appRoutes,
   observers: [RouteTracker.instance],
-    redirect: (context, state) {
+  redirect: (context, state) {
 
-      // ⭐️ 디버그 시작 (한국어)
+
+    // ⭐️ 디버그 시작 (한국어)
+    if (shouldShowRedirectDebug) {
       debugPrint('🚦 [라우터 리디렉션 확인] 목표 경로: ${state.uri.toString()}');
+    }
 
 
+    // 1. Riverpod 컨테이너 읽기 (ProviderScope.containerOf(context) 사용)
+    final providerContext = ProviderScope.containerOf(context);
 
-      // 1. Riverpod 컨테이너 읽기 (ProviderScope.containerOf(context) 사용)
-      final providerContext = ProviderScope.containerOf(context);
+    // 2. AuthState를 읽어옴
+    final authState = providerContext.read(authProvider);
+    final isLoggedIn = authState.user != null;
+    final isProfileIncomplete = authState.user?.isProfileIncomplete == true;
 
-      // 2. AuthState를 읽어옴
-      final authState = providerContext.read(authProvider);
-      final isLoggedIn = authState.user != null;
-      final isProfileIncomplete = authState.user?.isProfileIncomplete == true;
-
-      if (authState.isLoading) {
+    if (authState.isLoading) {
+      if (shouldShowRedirectDebug) {
         debugPrint('   -> 결과: 로딩 중. 리디렉션 대기 (null)');
-        return null;
       }
+      return null;
+    }
 
-      // 현재 이동하려는 경로 (path)
-      final currentPath = state.uri.toString();
+    // 현재 이동하려는 경로 (path)
+    final currentPath = state.uri.toString();
 
-      // 비인증 경로 목록 (로그인, 회원가입 관련)
-      final isGuestRoute = currentPath.startsWith(SignupScreen.routeName);
-      final isSetupRoute = currentPath.startsWith(SocialProfileSetupScreen.routeName);
+    // 비인증 경로 목록 (로그인, 회원가입 관련)
+    final isGuestRoute = currentPath.startsWith(SignupScreen.routeName);
+    final isSetupRoute = currentPath.startsWith(SocialProfileSetupScreen.routeName);
 
-      // ⭐️ 핵심 디버그: 현재 상태와 플래그 출력 (한국어)
+    // ⭐️ 핵심 디버그: 현재 상태와 플래그 출력 (한국어)
+    if (shouldShowRedirectDebug) {
       debugPrint('   - 인증 상태: ${authState.user != null ? '✅ 로그인됨' : '❌ 로그아웃됨'}');
       debugPrint('   - 프로필 미완료: ${isProfileIncomplete ? '⚠️ 예' : '✅ 아니오'}');
       debugPrint('   - 비인증 경로 진입?: $isGuestRoute (경로: ${SignupScreen.routeName})');
       debugPrint('   - 프로필 설정 경로?: $isSetupRoute (경로: ${SocialProfileSetupScreen.routeName})');
+    }
 
-      // --- 리디렉션 로직 시작 ---
+    // --- 리디렉션 로직 시작 ---
 
-      // Case 1: 로그아웃 상태일 때 (isLoggedIn == false)
-      if (!isLoggedIn) {
-        if (isGuestRoute) {
+    // Case 1: 로그아웃 상태일 때 (isLoggedIn == false)
+    if (!isLoggedIn) {
+      if (isGuestRoute) {
+        if (shouldShowRedirectDebug) {
           debugPrint('   -> 결과: 리디렉션 없음 (이미 비인증 경로)');
-          return null;
         }
+        return null;
+      }
+      if (shouldShowRedirectDebug) {
         debugPrint('   -> 결과: ${SignupScreen.routeName}로 리디렉션 (로그인 필요)');
-        return SignupScreen.routeName;
       }
+      return SignupScreen.routeName;
+    }
 
-      // Case 2: 로그인 상태일 때 (isLoggedIn == true)
+    // Case 2: 로그인 상태일 때 (isLoggedIn == true)
 
-      // 2-1: 프로필 미완료 상태일 때 (isProfileIncomplete == true)
-      if (isProfileIncomplete) {
-        // ⚠️ 수정: 전체 경로(Full Path)를 구성하여 반환해야 합니다.
-        final setupPath = '${SignupScreen.routeName}/${SocialProfileSetupScreen.routeName}';
+    // 2-1: 프로필 미완료 상태일 때 (isProfileIncomplete == true)
+    if (isProfileIncomplete) {
+      // ⚠️ 수정: 전체 경로(Full Path)를 구성하여 반환해야 합니다.
+      final setupPath = '${SignupScreen.routeName}/${SocialProfileSetupScreen.routeName}';
 
-        // 이미 프로필 설정 화면으로 가고 있다면 이동 허용
-        if (state.uri.toString().startsWith(setupPath)) {
+      // 이미 프로필 설정 화면으로 가고 있다면 이동 허용
+      if (state.uri.toString().startsWith(setupPath)) {
+        if (shouldShowRedirectDebug) {
           debugPrint('   -> 결과: 리디렉션 없음 (이미 프로필 설정 경로)');
-          return null;
         }
-
-        // 다른 모든 경로(Home 포함)로 접근 시도 시, 프로필 설정 화면으로 강제 리디렉션
-        debugPrint('   -> 결과: $setupPath로 리디렉션 (프로필 미완료)');
-        return setupPath;
-      }
-
-      // 2-2: 프로필 완료 상태일 때 (isProfileIncomplete == false)
-      if (!isProfileIncomplete) {
-        if (isGuestRoute || isSetupRoute) {
-          debugPrint('   -> 결과: ${HomeScreen.routeName}로 리디렉션 (프로필 완료, 비인증/설정 경로 이탈)');
-          return HomeScreen.routeName;
-        }
-        debugPrint('   -> 결과: 리디렉션 없음 (Home 또는 인증 경로 유지)');
         return null;
       }
 
-      debugPrint('   -> 결과: 리디렉션 없음 (기본 폴백)');
+      // 다른 모든 경로(Home 포함)로 접근 시도 시, 프로필 설정 화면으로 강제 리디렉션
+      if (shouldShowRedirectDebug) {
+        debugPrint('   -> 결과: $setupPath로 리디렉션 (프로필 미완료)');
+      }
+      return setupPath;
+    }
+
+    // 2-2: 프로필 완료 상태일 때 (isProfileIncomplete == false)
+    if (!isProfileIncomplete) {
+      if (isGuestRoute || isSetupRoute) {
+        if (shouldShowRedirectDebug) {
+          debugPrint('   -> 결과: ${HomeScreen.routeName}로 리디렉션 (프로필 완료, 비인증/설정 경로 이탈)');
+        }
+        return HomeScreen.routeName;
+      }
+      if (shouldShowRedirectDebug) {
+        debugPrint('   -> 결과: 리디렉션 없음 (Home 또는 인증 경로 유지)');
+      }
       return null;
-    },
+    }
+
+    if (shouldShowRedirectDebug) {
+      debugPrint('   -> 결과: 리디렉션 없음 (기본 폴백)');
+    }
+    return null;
+  },
   errorPageBuilder: (context, state) {
 
     debugPrint('*** GoRouter Navigation Error Detected ***');
