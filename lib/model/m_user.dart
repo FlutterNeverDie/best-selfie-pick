@@ -12,6 +12,7 @@ class UserModel {
   final DateTime regionUpdatedAt; // 지역 변경 제한 규칙 강제용 타임스탬프
 
   final bool isSocialLogin;
+  final bool isAdmin;
 
   // ----------------------------------------------------
   // 1. 생성자 (Constructor)
@@ -24,6 +25,7 @@ class UserModel {
     required this.region,
     required this.regionUpdatedAt,
     this.isSocialLogin = false,
+    this.isAdmin = false
   });
 
   // ----------------------------------------------------
@@ -33,6 +35,7 @@ class UserModel {
     required String uid,
     required String email,
     bool isSocialLogin = false,
+    bool isAdmin = false,
   }) {
     return UserModel(
       uid: uid,
@@ -43,6 +46,7 @@ class UserModel {
       // 초기에는 변경 가능하도록 1년 전으로 설정 (월 1회 제한을 바로 통과하기 위함)
       regionUpdatedAt: DateTime.now().subtract(const Duration(days: 365)),
       isSocialLogin: isSocialLogin,
+      isAdmin: isAdmin,
     );
   }
 
@@ -72,6 +76,7 @@ class UserModel {
       region: map['region'] as String,
       regionUpdatedAt: regionDate,
       isSocialLogin: map['isSocialLogin'] ?? false,
+      isAdmin: map['isAdmin'] ?? false,
     );
   }
 
@@ -88,6 +93,7 @@ class UserModel {
       // DateTime을 Firestore Timestamp로 변환하여 저장
       'regionUpdatedAt': Timestamp.fromDate(regionUpdatedAt),
       'isSocialLogin': isSocialLogin,
+      'isAdmin': isAdmin,
     };
   }
 

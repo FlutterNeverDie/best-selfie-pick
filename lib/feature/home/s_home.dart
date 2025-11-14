@@ -26,7 +26,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const List<Widget> _widgetOptions = <Widget>[
     ChampionScreen(), // 0: 챔피언
     RankingScreen(), // 1: 랭킹/투표 (초기 화면)
-    MyContestScreen(), // 2: 내 참가
+    MyEntryScreen(), // 2: 내 참가
     MyPageScreen(), // 3: 마이페이지
   ];
 

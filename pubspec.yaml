@@ -32,6 +32,7 @@ dependencies:
   cloud_firestore: ^6.1.0
   firebase_messaging: ^16.0.4
   flutter_local_notifications: ^19.5.0
+  firebase_storage: ^13.0.4
 
   # images / icon
   flutter_svg: ^2.2.0
