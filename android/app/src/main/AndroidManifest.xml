@@ -1,6 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Android 13 이상에서 미디어 접근을 위해 필요 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- Android 12 이하에서 갤러리 접근을 위해 필요 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+
     <application
-        android:label="selfie_pick"
+        android:requestLegacyExternalStorage="true"
+        android:label="셀픽"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
