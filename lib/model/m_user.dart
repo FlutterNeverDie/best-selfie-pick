@@ -14,6 +14,8 @@ class UserModel {
   final bool isSocialLogin;
   final bool isAdmin;
 
+  final String? lastEntryWeekKey;
+
   // ----------------------------------------------------
   // 1. 생성자 (Constructor)
   // ----------------------------------------------------
@@ -25,7 +27,8 @@ class UserModel {
     required this.region,
     required this.regionUpdatedAt,
     this.isSocialLogin = false,
-    this.isAdmin = false
+    this.isAdmin = false,
+    this.lastEntryWeekKey,
   });
 
   // ----------------------------------------------------
@@ -47,6 +50,7 @@ class UserModel {
       regionUpdatedAt: DateTime.now().subtract(const Duration(days: 365)),
       isSocialLogin: isSocialLogin,
       isAdmin: isAdmin,
+      lastEntryWeekKey: null,
     );
   }
 
@@ -77,6 +81,7 @@ class UserModel {
       regionUpdatedAt: regionDate,
       isSocialLogin: map['isSocialLogin'] ?? false,
       isAdmin: map['isAdmin'] ?? false,
+      lastEntryWeekKey: map['lastEntryWeekKey'] as String?,
     );
   }
 
@@ -94,6 +99,7 @@ class UserModel {
       'regionUpdatedAt': Timestamp.fromDate(regionUpdatedAt),
       'isSocialLogin': isSocialLogin,
       'isAdmin': isAdmin,
+      'lastEntryWeekKey': lastEntryWeekKey,
     };
   }
 
@@ -108,6 +114,7 @@ class UserModel {
     String? region,
     DateTime? regionUpdatedAt,
     bool? isSocialLogin,
+    String? lastEntryWeekKey,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -117,6 +124,8 @@ class UserModel {
       region: region ?? this.region,
       regionUpdatedAt: regionUpdatedAt ?? this.regionUpdatedAt,
       isSocialLogin: isSocialLogin ?? this.isSocialLogin,
+      isAdmin: isAdmin,
+      lastEntryWeekKey: lastEntryWeekKey ?? this.lastEntryWeekKey,
     );
   }
 

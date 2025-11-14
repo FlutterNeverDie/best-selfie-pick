@@ -8,13 +8,7 @@ import '../../../../shared/interface/i_date_util.dart';
 import '../../model/m_entry.dart';
 
 
-// Firebase 글로벌 변수 사용 (실제 앱 ID 경로를 위해 필요)
-const String _globalAppId = String.fromEnvironment('APP_ID', defaultValue: 'default-app-id');
 
-// Canvas 환경에서 안전하게 __app_id 변수를 참조합니다.
-final String _appId = const bool.fromEnvironment('dart.vm.product')
-    ? const String.fromEnvironment('CANVAS_APP_ID', defaultValue: _globalAppId)
-    : _globalAppId;
 
 
 // Repository Provider 정의: DB 인스턴스들을 주입합니다.
@@ -32,7 +26,9 @@ class EntryRepository {
   final IDateUtil _dateUtil = DateUtilImpl();
 
   // DB 경로: /artifacts/{appId}/public/data/contest_entries
-  String get _collectionPath => 'artifacts/$_appId/public/data/contest_entries';
+  // 💡 Note: 현재 DB 규칙과 일치시키기 위해 'contest_entries'로 임시 수정됨
+  // String get _collectionPath => 'artifacts/$_appId/public/data/contest_entries';
+  String get _collectionPath => 'contest_entries'; // <-- 임시 최상위 경로 사용 중
 
   // 💡 생성자를 통해 DB 및 Storage 인스턴스 주입
   EntryRepository(this._firestore, this._storage);
@@ -41,7 +37,6 @@ class EntryRepository {
   /// 1. 현재 회차의 참가 기록 조회 (My Entry Tab의 핵심 쿼리)
   Future<EntryModel?> fetchCurrentEntry(String userId, String weekKey, String regionCity) async {
     try {
-      // 💡 V3.0 핵심 쿼리: UID, WeekKey, RegionCity 세 가지 필드가 모두 일치해야 함.
       final querySnapshot = await _firestore
           .collection(_collectionPath)
           .where('userId', isEqualTo: userId)
@@ -57,18 +52,18 @@ class EntryRepository {
       return EntryModel.fromMap(doc.data(), doc.id);
 
     } catch (e) {
-      debugPrint('Error fetching current entry: $e');
+      debugPrint('Error fetchCurrentEntry current entry: $e');
       throw Exception('참가 정보를 불러오는 중 오류가 발생했습니다.');
     }
   }
 
 
   /// 2. 사진을 Cloud Storage에 업로드 (WebP 변환/썸네일 로직은 클라이언트 처리 가정)
-  Future<Map<String, String>> uploadPhoto(String userId, File photoFile) async {
-    // 💡 _dateUtil 내부 인스턴스를 사용하여 weekKey 계산
+  Future<Map<String, String>> uploadPhoto(String userId, File photoFile, String regionCity, String snsId) async {
+    // ... (로직 유지)
     final currentWeekKey = _dateUtil.getContestWeekKey(DateTime.now());
-    final fileName = '${userId}_$currentWeekKey.webp';
-    final storagePath = 'entry_photos/$currentWeekKey/$fileName';
+    final fileName = '${userId}_${snsId}_$currentWeekKey.webp';
+    final storagePath = 'entry_photos/$regionCity/$currentWeekKey/$fileName';
 
     try {
       final uploadTask = _storage.ref().child(storagePath).putFile(photoFile,
@@ -97,9 +92,8 @@ class EntryRepository {
     required String thumbnailUrl,
     required String snsId,
   }) async {
+    const methodName = 'EntryRepository.참가데이터_저장(saveEntry)'; // 디버깅용 한글 메소드명
     final now = DateTime.now();
-
-    // 💡 _dateUtil 내부 인스턴스를 사용하여 currentWeekKey 계산
     final currentWeekKey = _dateUtil.getContestWeekKey(now);
 
     final newEntry = EntryModel(
@@ -114,8 +108,12 @@ class EntryRepository {
       createdAt: now,
     );
 
+    // 💡 추가된 디버그 코드: Firestore로 전송될 최종 Map 데이터 출력
+    final dataToSave = newEntry.toMap();
+    debugPrint('$methodName: [전송 데이터 확인] Firestore로 전송될 Map: $dataToSave');
+
     try {
-      final docRef = await _firestore.collection(_collectionPath).add(newEntry.toMap());
+      final docRef = await _firestore.collection(_collectionPath).add(dataToSave); // dataToSave 사용
 
       // 저장된 문서 ID를 포함하여 EntryModel 반환
       return newEntry.copyWith(entryId: docRef.id);
@@ -126,23 +124,17 @@ class EntryRepository {
   }
 
 
-  /// 4. 실시간 득표 수 스트림 (My Entry Tab의 voting_active 상태에서 사용)
+  // 4. 실시간 득표 수 스트림 (삭제됨 - 필요 시 복구)
+  /*
   Stream<EntryModel> streamVotes(String entryId) {
-    return _firestore.collection(_collectionPath).doc(entryId).snapshots().map((snapshot) {
-      if (!snapshot.exists) {
-        throw Exception("참가 문서가 존재하지 않습니다.");
-      }
-      // Firestore에서 변경된 득표 수를 EntryModel로 변환하여 실시간으로 전달
-      return EntryModel.fromMap(snapshot.data()!, snapshot.id);
-    }).handleError((e) {
-      debugPrint('Error streaming entry votes: $e');
-      throw Exception('실시간 득표 정보를 불러오는데 실패했습니다.');
-    });
+    // ...
   }
+  */
 
   /// 5. 관리자 승인 완료 후 상태 갱신 (핵심 로직)
   /// * 💡 V3.0 로직: 관리자가 승인(approved)하면, 클라이언트가 바로 voting_active로 전환함.
   Future<void> updateEntryStatusAfterApproval(String entryId, String nextWeekKey) async {
+    // ... (로직 유지)
     try {
       await _firestore.collection(_collectionPath).doc(entryId).update({
         'status': 'voting_active',
@@ -153,6 +145,40 @@ class EntryRepository {
     } catch (e) {
       debugPrint('Error updating status after approval: $e');
       throw Exception('참가 상태를 활성화하는데 실패했습니다.');
+    }
+  }
+
+
+  /// 6. 참가 기록 및 사진 삭제 (반려 후 재신청 시 사용)
+  Future<void> deleteEntryAndPhoto(EntryModel entry) async {
+    const methodName = 'EntryRepository.데이터_삭제(deleteEntryAndPhoto)';
+
+    // 1. Firestore 문서 삭제
+    try {
+      await _firestore.collection(_collectionPath).doc(entry.entryId).delete();
+      debugPrint('$methodName: [성공] Firestore 문서 삭제 완료. EntryID: ${entry.entryId}');
+    } catch (e) {
+      // 권한 문제 등이 발생하면, 사용자에게는 재신청을 막지 않고 로그만 남김.
+      debugPrint('$methodName: [실패] Firestore 문서 삭제 실패: $e');
+    }
+
+    // 2. Storage 사진 삭제
+    try {
+      // photoUrl에서 Storage 경로(Reference)를 추출하여 삭제합니다.
+      final photoRef = _storage.refFromURL(entry.photoUrl);
+      await photoRef.delete();
+      debugPrint('$methodName: [성공] Storage 사진 삭제 완료. URL: ${entry.photoUrl}');
+
+      // 썸네일 URL이 다르다면 썸네일도 삭제
+      if (entry.thumbnailUrl != entry.photoUrl) {
+        final thumbRef = _storage.refFromURL(entry.thumbnailUrl);
+        await thumbRef.delete();
+        debugPrint('$methodName: [성공] Storage 썸네일 삭제 완료.');
+      }
+
+    } catch (e) {
+      // 사진이 이미 삭제되었을 수도 있으므로, 오류가 발생해도 플로우는 계속 진행
+      debugPrint('$methodName: [실패] Storage 사진 삭제 실패: $e');
     }
   }
 }
