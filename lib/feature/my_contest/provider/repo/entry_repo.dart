@@ -2,7 +2,10 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../../shared/interface/i_date_util.dart';
 import '../../model/m_entry.dart';
@@ -57,32 +60,83 @@ class EntryRepository {
     }
   }
 
-
-  /// 2. 사진을 Cloud Storage에 업로드 (WebP 변환/썸네일 로직은 클라이언트 처리 가정)
+  /// 2. 사진을 Cloud Storage에 업로드 (썸네일만 저장하는 최적화 버전)
   Future<Map<String, String>> uploadPhoto(String userId, File photoFile, String regionCity, String snsId) async {
-    // ... (로직 유지)
+    const methodName = 'EntryRepository.사진업로드(uploadPhoto_V2_ThumbnailOnly)';
     final currentWeekKey = _dateUtil.getContestWeekKey(DateTime.now());
-    final fileName = '${userId}_${snsId}_$currentWeekKey.webp';
-    final storagePath = 'entry_photos/$regionCity/$currentWeekKey/$fileName';
+
+    final baseFileName = '${userId}_${snsId}_$currentWeekKey.webp';
+    XFile? thumbnailFileX;
+
+    // 💡 썸네일 경로만 정의
+    final thumbnailStoragePath = 'entry_photos/$regionCity/$currentWeekKey/thumb_$baseFileName';
+
+    // 썸네일 생성 및 업로드에 걸린 총 시간 측정을 위한 시작 시간
+    final startTime = DateTime.now();
 
     try {
-      final uploadTask = _storage.ref().child(storagePath).putFile(photoFile,
-          SettableMetadata(contentType: 'image/webp') // WebP 타입 명시
-      );
-      final snapshot = await uploadTask;
-      final photoUrl = await snapshot.ref.getDownloadURL();
+      final tempDir = await getTemporaryDirectory();
+      final tempPath = tempDir.path;
 
-      // V3.0: 썸네일/WebP 변환은 클라이언트에서 처리 후, 여기서는 동일 URL로 임시 처리
+      // ----------------------------------------------------
+      // Step 1. 썸네일 파일 생성 (원본을 바로 리사이즈/압축)
+      // ----------------------------------------------------
+      final time1_start = DateTime.now();
+      final thumbnailPath = p.join(tempPath, 'thumb_$baseFileName');
+
+      // 💡 원본을 바로 리사이즈하여 썸네일 파일 하나만 생성합니다.
+      thumbnailFileX = await FlutterImageCompress.compressAndGetFile(
+        photoFile.path,
+        thumbnailPath,
+        minWidth: 720, // 💡 썸네일 너비를 조금 더 키워 퀄리티 확보 (예: 720px)
+        minHeight: 900,
+        quality: 75, // 품질을 약간 올려서 원본에 가깝게 유지
+        format: CompressFormat.webp,
+      );
+
+      if (thumbnailFileX == null) throw Exception("썸네일 파일 생성 실패.");
+      final time1_end = DateTime.now();
+      debugPrint('$methodName: [시간 측정] 1. 썸네일 생성 및 압축 소요 시간: ${time1_end.difference(time1_start).inMilliseconds} ms');
+
+
+      // ----------------------------------------------------
+      // Step 2. 썸네일 업로드 (Storage 통신)
+      // ----------------------------------------------------
+      final time2_start = DateTime.now();
+      final thumbnailUploadTask = _storage.ref().child(thumbnailStoragePath).putFile(
+          File(thumbnailFileX.path),
+          SettableMetadata(contentType: 'image/webp')
+      );
+      final thumbnailSnapshot = await thumbnailUploadTask;
+      final thumbnailUrl = await thumbnailSnapshot.ref.getDownloadURL();
+      final time2_end = DateTime.now();
+      debugPrint('$methodName: [시간 측정] 2. Storage 업로드 소요 시간: ${time2_end.difference(time2_start).inMilliseconds} ms');
+
+
+      // ----------------------------------------------------
+      // Final. 최종 정리
+      // ----------------------------------------------------
+      final thumbnailSize = File(thumbnailFileX.path).lengthSync() / 1024;
+      final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+      debugPrint('$methodName: [최종 업로드] 총 소요 시간: $totalTime ms, 최종 파일 크기: $thumbnailSize KB');
+
+      // 💡 썸네일 URL을 두 필드에 모두 반환 (원본 없음)
       return {
-        'photoUrl': photoUrl,
-        'thumbnailUrl': photoUrl,
+        'photoUrl': thumbnailUrl, // 💡 원본 자리에 썸네일 URL을 대체
+        'thumbnailUrl': thumbnailUrl,
       };
 
     } catch (e) {
-      debugPrint('Error uploading photo: $e');
+      debugPrint('Error uploading photo or creating thumbnail: $e');
       throw Exception('사진 업로드 중 오류가 발생했습니다.');
+    } finally {
+      // 💡 임시 썸네일 파일만 삭제
+      if (thumbnailFileX != null) {
+        File(thumbnailFileX.path).deleteSync();
+      }
     }
   }
+
 
   /// 3. 참가 신청 데이터 Firestore에 저장 (status: pending)
   Future<EntryModel> saveEntry({

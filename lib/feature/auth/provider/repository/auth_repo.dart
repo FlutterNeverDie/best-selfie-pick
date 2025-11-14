@@ -5,9 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:selfie_pick/model/m_user.dart';
 
-
 enum EmailCheckStatus {
-  available,        // 사용 가능
+  available, // 사용 가능
   emailAlreadyInUse, // 이메일/비밀번호 가입 계정 중복
   socialAccountFound, // 소셜 로그인 계정 발견
 }
@@ -29,7 +28,6 @@ class AuthRepo {
 
   static const String _usersCollection = 'users';
 
-
   /// 2. 이메일 회원가입 로직 (Firebase Auth & Firestore 데이터 저장)
   Future<UserModel> signUp({
     required String email,
@@ -37,18 +35,18 @@ class AuthRepo {
     required String region,
     required String gender,
   }) async {
-
-
     try {
       // 1. Firebase Auth 사용자 생성
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       final user = userCredential.user;
       if (user == null) {
-        throw FirebaseAuthException(code: 'user-creation-failed', message: '사용자 계정 생성에 실패했습니다.');
+        throw FirebaseAuthException(
+            code: 'user-creation-failed', message: '사용자 계정 생성에 실패했습니다.');
       }
 
       // 2. UserModel 생성 및 Firestore 저장 (필수 정보 포함)
@@ -61,7 +59,10 @@ class AuthRepo {
         fcmToken: null, // 초기 가입 시에는 null
       );
 
-      await _firestore.collection(_usersCollection).doc(user.uid).set(userModel.toMap());
+      await _firestore
+          .collection(_usersCollection)
+          .doc(user.uid)
+          .set(userModel.toMap());
 
       return userModel;
     } on FirebaseAuthException {
@@ -72,7 +73,8 @@ class AuthRepo {
   }
 
   /// 3. 이메일 로그인 로직
-  Future<UserModel> signIn({required String email, required String password}) async {
+  Future<UserModel> signIn(
+      {required String email, required String password}) async {
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -88,11 +90,11 @@ class AuthRepo {
 
       if (result == null) {
         // Auth에는 있지만 Firestore에 없는 경우 (보안 규칙 문제나 데이터 누락)
-        throw FirebaseAuthException(code: 'user-data-missing', message: '사용자 데이터를 찾을 수 없습니다.');
+        throw FirebaseAuthException(
+            code: 'user-data-missing', message: '사용자 데이터를 찾을 수 없습니다.');
       } else {
         return result;
       }
-
     } on FirebaseAuthException {
       rethrow;
     } catch (e) {
@@ -110,17 +112,19 @@ class AuthRepo {
     try {
       // 1. UserModel 생성 (완전한 데이터)
       final userModel = UserModel(
-        uid: uid,
-        email: email,
-        gender: gender,
-        region: region,
-        regionUpdatedAt: DateTime.now(),
-        fcmToken: null,
-        isSocialLogin: true
-      );
+          uid: uid,
+          email: email,
+          gender: gender,
+          region: region,
+          regionUpdatedAt: DateTime.now(),
+          fcmToken: null,
+          isSocialLogin: true);
 
       // 2. Firestore 저장 (최종 문서 생성)
-      await _firestore.collection(_usersCollection).doc(uid).set(userModel.toMap());
+      await _firestore
+          .collection(_usersCollection)
+          .doc(uid)
+          .set(userModel.toMap());
 
       return userModel;
     } catch (e) {
@@ -141,7 +145,8 @@ class AuthRepo {
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
 
       final loadedUser = await _fetchUserModel(user.uid);
@@ -151,12 +156,10 @@ class AuthRepo {
         // Firebase Auth 정보만 포함한 '프로필 불완전(NotSet)' 상태의 UserModel을 반환합니다.
         return UserModel.initial(
             uid: user.uid,
-            email: user.email ?? 'social_user_${user.uid}@gmail.com'
-        );
+            email: user.email ?? 'social_user_${user.uid}@gmail.com');
       }
 
       return loadedUser;
-
     } on FirebaseAuthException catch (e) {
       // Firebase Auth 관련 오류 처리
       throw Exception('Google 로그인 중 오류 발생: ${e.code}');
@@ -166,13 +169,11 @@ class AuthRepo {
     }
   }
 
-
 // --- 9. 소셜 로그인 함수 (Apple) ---
   Future<UserModel?> signInWithApple() async {
     // 구현 예정
     return null;
   }
-
 
 // --- 10. 소셜 로그인 함수 (Kakao) ---
   Future<UserModel?> signInWithKakao() async {
@@ -222,44 +223,40 @@ class AuthRepo {
 
     print('result : $result');
 
-    return  result;
+    return result;
   }
-
 
   /// 11. 특정 이메일 주소로 등록된 인증 방법이 있는지 확인 (중복 확인)
 
-
-
 // AuthRepo 클래스 내부의 checkIfEmailExists 메서드 수정
   Future<EmailCheckStatus> checkIfEmailExists(String emailAddress) async {
-  try {
-  // 1. Firestore에서 이메일 일치 문서 조회
-  final QuerySnapshot result = await _firestore
-      .collection(_usersCollection)
-      .where('email', isEqualTo: emailAddress)
-      .limit(1)
-      .get();
+    try {
+      // 1. Firestore에서 이메일 일치 문서 조회
+      final QuerySnapshot result = await _firestore
+          .collection(_usersCollection)
+          .where('email', isEqualTo: emailAddress)
+          .limit(1)
+          .get();
 
-  // 2. 문서가 없으면 사용 가능
-  if (result.docs.isEmpty) {
-  return EmailCheckStatus.available;
-  }
+      // 2. 문서가 없으면 사용 가능
+      if (result.docs.isEmpty) {
+        return EmailCheckStatus.available;
+      }
 
-  // 3. 문서가 발견된 경우, isSocialLogin 필드 확인
-  final userData = result.docs.first.data() as Map<String, dynamic>;
-  // Firestore에 해당 필드가 없으면 기본적으로 false로 간주
-  final isSocial = userData['isSocialLogin'] ?? false;
+      // 3. 문서가 발견된 경우, isSocialLogin 필드 확인
+      final userData = result.docs.first.data() as Map<String, dynamic>;
+      // Firestore에 해당 필드가 없으면 기본적으로 false로 간주
+      final isSocial = userData['isSocialLogin'] ?? false;
 
-  if (isSocial) {
-  return EmailCheckStatus.socialAccountFound;
-  } else {
-  return EmailCheckStatus.emailAlreadyInUse;
-  }
-
-  } catch (e) {
-  // 조회 중 오류 발생 (권한/네트워크 등)
-  print('Firestore lookup error: $e');
-  throw Exception('Failed to check email existence in Firestore: $e');
-  }
+      if (isSocial) {
+        return EmailCheckStatus.socialAccountFound;
+      } else {
+        return EmailCheckStatus.emailAlreadyInUse;
+      }
+    } catch (e) {
+      // 조회 중 오류 발생 (권한/네트워크 등)
+      print('Firestore lookup error: $e');
+      throw Exception('Failed to check email existence in Firestore: $e');
+    }
   }
 }

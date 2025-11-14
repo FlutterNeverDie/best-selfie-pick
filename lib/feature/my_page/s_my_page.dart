@@ -146,7 +146,7 @@ class MyPageScreen extends ConsumerWidget {
                               ),
                               SizedBox(width: 4.w),
                               Text(
-                                user?.gender == 'Female' ? '여성 (참가 가능)' : (user?.gender == 'Male' ? '남성 (투표 불가)' : '미설정'),
+                                user?.gender == 'Female' ? '여성' : (user?.gender == 'Male' ? '남성' : '미설정'),
                                 style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
                               ),
                             ],

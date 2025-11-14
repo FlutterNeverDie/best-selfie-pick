@@ -106,7 +106,7 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
           '$methodName: [요청] Cloud Storage 사진 업로드 시작 (UserID: ${user.uid}, FileSize: ${photo.lengthSync() / 1024} KB)');
 
       final photoUrls =
-          await _repository.uploadPhoto(user.uid, photo, user.region, snsId);
+          await _repository.uploadPhoto(user.email, photo, user.region, snsId);
 
       debugPrint(
           '$methodName: [응답] Cloud Storage 업로드 완료. PhotoUrl: ${photoUrls['photoUrl']!}');

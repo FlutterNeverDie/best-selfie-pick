@@ -39,6 +39,8 @@ dependencies:
   cached_network_image: ^3.4.1
   image_picker: ^1.2.0
   flutter_image_compress: ^2.4.0
+  path_provider: ^2.1.5
+  path: ^1.9.1
 
   # web
   url_launcher: ^6.3.2
