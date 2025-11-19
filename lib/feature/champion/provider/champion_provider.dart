@@ -25,7 +25,7 @@ StateNotifierProvider.autoDispose<ChampionNotifier, ChampionState>((ref) {
       authState.user!.region, // User의 현재 지역
       contestStatus.lastSettledWeekKey! // 지난 정산 회차 키
   );
-});
+}, name: 'championProvider');
 
 class ChampionNotifier extends StateNotifier<ChampionState> {
   final ChampionRepository _repository;

@@ -5,7 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/auth/s_auth_gate.dart';
 
 import '../auth/provider/auth_notifier.dart'; // Auth Notifier import
-import '../../model/m_user.dart'; // UserModel import (경로가 m_user.dart라고 가정)
+import '../../model/m_user.dart';
+import '../notice/s_notice.dart';
+import '../notification/s_notification_settings.dart'; // UserModel import (경로가 m_user.dart라고 가정)
 
 
 class MyPageScreen extends ConsumerWidget {
@@ -90,141 +92,136 @@ class MyPageScreen extends ConsumerWidget {
 
     // 2. ScreenUtil 초기화 (최상위에서 이미 되었다고 가정)
     // 3. UI 구성
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      builder: (context, child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('마이페이지'),
-            elevation: 0,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-          ),
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- A. 사용자 정보 섹션 ---
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 30.h, horizontal: 20.w),
-                  color: Colors.grey.shade50,
-                  child: Row(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('마이페이지'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- A. 사용자 정보 섹션 ---
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 30.h, horizontal: 20.w),
+              color: Colors.grey.shade50,
+              child: Row(
+                children: [
+                  // 프로필 아이콘 (임시)
+                  CircleAvatar(
+                    radius: 30.r,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    child: Text(
+                      user?.email.substring(0, 1).toUpperCase() ?? '?',
+                      style: TextStyle(fontSize: 24.sp, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 프로필 아이콘 (임시)
-                      CircleAvatar(
-                        radius: 30.r,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: Text(
-                          user?.email.substring(0, 1).toUpperCase() ?? '?',
-                          style: TextStyle(fontSize: 24.sp, color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
+                      Text(
+                        user?.email ?? '로그인 필요',
+                        style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(width: 16.w),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      SizedBox(height: 4.h),
+                      Row(
                         children: [
+                          // 지역 (시 단위)
+                          Icon(Icons.location_on, size: 16.sp, color: Colors.grey),
+                          SizedBox(width: 4.w),
                           Text(
-                            user?.email ?? '로그인 필요',
-                            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                            user?.region == 'NotSet' ? '지역 미설정' : user?.region ?? '미설정',
+                            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
                           ),
-                          SizedBox(height: 4.h),
-                          Row(
-                            children: [
-                              // 지역 (시 단위)
-                              Icon(Icons.location_on, size: 16.sp, color: Colors.grey),
-                              SizedBox(width: 4.w),
-                              Text(
-                                user?.region == 'NotSet' ? '지역 미설정' : user?.region ?? '미설정',
-                                style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
-                              ),
-                              SizedBox(width: 12.w),
-                              // 성별
-                              Icon(
-                                user?.gender == 'Female' ? Icons.female : Icons.male,
-                                size: 16.sp,
-                                color: user?.gender == 'Female' ? Colors.pink : Colors.blue,
-                              ),
-                              SizedBox(width: 4.w),
-                              Text(
-                                user?.gender == 'Female' ? '여성' : (user?.gender == 'Male' ? '남성' : '미설정'),
-                                style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
-                              ),
-                            ],
+                          SizedBox(width: 12.w),
+                          // 성별
+                          Icon(
+                            user?.gender == 'Female' ? Icons.female : Icons.male,
+                            size: 16.sp,
+                            color: user?.gender == 'Female' ? Colors.pink : Colors.blue,
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            user?.gender == 'Female' ? '여성' : (user?.gender == 'Male' ? '남성' : '미설정'),
+                            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
                           ),
                         ],
                       ),
                     ],
                   ),
-                ),
-
-                // --- B. 설정 및 고객 지원 섹션 ---
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: Text('   설정 및 지원', style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
-                ),
-
-                // 1. 알림 설정
-                _buildMenuItem(
-                  title: '알림 설정',
-                  icon: Icons.notifications,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('알림 설정 화면으로 이동합니다.')));
-                  },
-                ),
-                // 2. 공지사항
-                _buildMenuItem(
-                  title: '공지사항',
-                  icon: Icons.campaign,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('공지사항 화면으로 이동합니다.')));
-                  },
-                ),
-                // 3. 문의 (1:1)
-                _buildMenuItem(
-                  title: '1:1 문의',
-                  icon: Icons.support_agent,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('문의하기 화면으로 이동합니다.')));
-                  },
-                ),
-                // 4. 운영 정책
-                _buildMenuItem(
-                  title: '운영 정책 및 약관',
-                  icon: Icons.policy,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('운영 정책 화면으로 이동합니다.')));
-                  },
-                ),
-
-                // --- C. 계정 관리 섹션 ---
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: Text('   계정 관리', style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
-                ),
-
-                // 5. 로그아웃
-                _buildMenuItem(
-                  title: '로그아웃',
-                  icon: Icons.logout,
-                  onTap: () => _handleSignOut(context, ref),
-                  titleColor: Colors.blue,
-                ),
-
-                // 6. 회원 탈퇴
-                _buildMenuItem(
-                  title: '회원 탈퇴',
-                  icon: Icons.person_remove,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('회원 탈퇴 처리 화면으로 이동합니다.')));
-                  },
-                  titleColor: Colors.red,
-                ),
-                SizedBox(height: 50.h),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
+
+            // --- B. 설정 및 고객 지원 섹션 ---
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              child: Text('   설정 및 지원', style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
+            ),
+
+            // 1. 알림 설정
+            _buildMenuItem(
+              title: '알림 설정',
+              icon: Icons.notifications,
+              onTap: () {
+                context.goNamed(NotificationSettingsScreen.routeName);
+              },
+            ),
+            // 2. 공지사항
+            _buildMenuItem(
+              title: '공지사항',
+              icon: Icons.campaign,
+              onTap: () {
+                context.goNamed(NoticeScreen.routeName);
+              },
+            ),
+            // 3. 문의 (1:1)
+            _buildMenuItem(
+              title: '1:1 문의',
+              icon: Icons.support_agent,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('문의하기 화면으로 이동합니다.')));
+              },
+            ),
+            // 4. 운영 정책
+            _buildMenuItem(
+              title: '운영 정책 및 약관',
+              icon: Icons.policy,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('운영 정책 화면으로 이동합니다.')));
+              },
+            ),
+
+            // --- C. 계정 관리 섹션 ---
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              child: Text('   계정 관리', style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
+            ),
+
+            // 5. 로그아웃
+            _buildMenuItem(
+              title: '로그아웃',
+              icon: Icons.logout,
+              onTap: () => _handleSignOut(context, ref),
+              titleColor: Colors.blue,
+            ),
+
+            // 6. 회원 탈퇴
+            _buildMenuItem(
+              title: '회원 탈퇴',
+              icon: Icons.person_remove,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('회원 탈퇴 처리 화면으로 이동합니다.')));
+              },
+              titleColor: Colors.red,
+            ),
+            SizedBox(height: 50.h),
+          ],
+        ),
+      ),
     );
   }
 }

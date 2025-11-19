@@ -26,7 +26,7 @@ final voteProvider = StateNotifierProvider<VoteNotifier, VotingStatus>((ref) {
     authState.user!.region, // UserModel의 지역 필드
     contestStatus.currentWeekKey!,
   );
-});
+}, name:  'voteProvider');
 
 class VoteNotifier extends StateNotifier<VotingStatus> {
   final RankingRepository _repository;

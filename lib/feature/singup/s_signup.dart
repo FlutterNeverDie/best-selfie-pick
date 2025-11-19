@@ -132,7 +132,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
     final authNotifier = ref.read(authProvider.notifier);
 
     return Scaffold(
@@ -142,16 +141,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           padding: EdgeInsets.symmetric(horizontal: 40.0.w, vertical: 60.0.h), // 반응형 패딩
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- 앱 타이틀 영역 (IMG_7265) ---
               Expanded(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                          '지역별 여성들의 셀카 콘테스트',
+                          '지역별 베스트 셀카 픽',
                           style: TextStyle(fontSize: 16.sp, color: Colors.grey) // 반응형 폰트
                       ),
                       SizedBox(height: 10.h), // 반응형 공간
@@ -165,7 +163,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
 
 
-              _buildSocialButton(
+/*              _buildSocialButton(
                 text: 'Go Home (Test)', // 테스트용 버튼 텍스트
                 backgroundColor: Colors.blue.shade300, // 파란색 계열
                 iconWidget: const Icon(Icons.home), // 집 아이콘
@@ -179,7 +177,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   context.go(HomeScreen.routeName);
                 },
               ),
-              SizedBox(height: 10.h), // 반응형 공간
+              SizedBox(height: 10.h), // 반응형 공간*/
 
 
               // --- 소셜/이메일 버튼 영역 (IMG_7265) ---

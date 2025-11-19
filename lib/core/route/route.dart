@@ -1,9 +1,11 @@
 import 'package:go_router/go_router.dart';
 import 'package:selfie_pick/feature/home/s_home.dart';
 import 'package:selfie_pick/feature/auth/s_auth_gate.dart';
+import 'package:selfie_pick/feature/notice/s_notice.dart';
 import 'package:selfie_pick/feature/singup/s_login.dart';
 
 import '../../feature/my_contest/s_entry_submission_screen.dart';
+import '../../feature/notification/s_notification_settings.dart';
 import '../../feature/singup/s_email.dart';
 import '../../feature/singup/s_profile_setup.dart';
 import '../../feature/singup/s_signup.dart';
@@ -29,6 +31,16 @@ final List<GoRoute> appRoutes = [
         path: 'submit_entry', // 전체 경로는 '/home/submit_entry'가 됨
         name: EntrySubmissionScreen.routeName, // '/submit_entry'가 아니라 'submit_entry'나 다른 고유 이름으로 설정 권장
         builder: (context, state) => const EntrySubmissionScreen(),
+      ),
+      GoRoute(
+        path: 'notifications',
+        name: NotificationSettingsScreen.routeName, // '/notifications'
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: 'notice',
+        name: NoticeScreen.routeName,
+        builder: (context, state) => const NoticeScreen(),
       ),
     ],
   ),

@@ -41,7 +41,7 @@ class ChampionScreen extends ConsumerWidget {
       appBar: AppBar(
         // 💡 2. AppBar 구조 오류 수정: title 속성에 Text 위젯 할당
         title: Text(
-          voteState.isVoted ? '베스트 픽 랭킹' : '베스트 픽 투표',
+          '명예의 전당',
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
