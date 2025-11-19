@@ -12,11 +12,6 @@ import '../../core/theme/colors/app_color.dart';
 import '../auth/provider/auth_notifier.dart';
 import '../home/s_home.dart';
 
-
-
-// NOTE: 이 파일은 AuthGate에서 리디렉션되는 '회원가입/로그인 선택' 화면입니다.
-// 벤치마킹 앱의 IMG_7265.PNG 화면에 해당합니다.
-
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 

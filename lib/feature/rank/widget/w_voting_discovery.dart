@@ -46,7 +46,7 @@ class WVotingDiscovery extends ConsumerWidget {
                   size: 20.w, color: AppColor.primary),
               SizedBox(width: 8.w),
               Text(
-                '${currentUserRegion} 지역 투표 후보',
+                '$currentUserRegion 지역 투표 후보',
                 style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.bold,

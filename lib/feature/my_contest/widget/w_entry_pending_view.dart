@@ -117,7 +117,7 @@ class WEntryPendingView extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          entry.snsId,
+                          '@${entry.snsId}',
                           style: TextStyle(
                             fontSize: 17.sp,
                             fontWeight: FontWeight.bold,

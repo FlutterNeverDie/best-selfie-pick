@@ -36,7 +36,6 @@ class WCandidateItem extends ConsumerWidget {
         decoration: BoxDecoration(
           color: itemColor,
           borderRadius: BorderRadius.circular(8.w),
-          border: Border.all(color: borderColor, width: 3.w),
           boxShadow: isSelected
               ? [BoxShadow(color: AppColor.primary.withOpacity(0.4), blurRadius: 4.w)]
               : null,
@@ -61,7 +60,7 @@ class WCandidateItem extends ConsumerWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
               child: Text(
-                candidate.snsId,
+                '@${candidate.snsId}',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.sp,

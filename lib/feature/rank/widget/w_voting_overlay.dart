@@ -74,7 +74,7 @@ class WVotingOverlay extends ConsumerWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.w)),
             ),
             child: Text(
-              '베스프 픽 제출 (${selectedPicks.length}/${VoteNotifier.MAX_PICKS})',
+              '베스트 픽 제출 (${selectedPicks.length}/${VoteNotifier.MAX_PICKS})',
               style: TextStyle(fontSize: 16.sp, color: Colors.white),
             ),
           ),

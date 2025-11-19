@@ -10,7 +10,7 @@ import '../model/m_entry.dart';
 // EntryNotifier의 상태는 AsyncValue<EntryModel?> 형태입니다.
 // data: null -> 미참가 (Not Entered)
 final entryProvider = AsyncNotifierProvider<EntryNotifier, EntryModel?>(
-  () => EntryNotifier(),
+  () => EntryNotifier(), name:  'EntryProvider',
 );
 
 class EntryNotifier extends AsyncNotifier<EntryModel?> {
