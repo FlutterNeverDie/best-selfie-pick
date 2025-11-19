@@ -2,6 +2,8 @@
 abstract class IDateUtil {
   // 현재 시간을 기준으로 Contest Week Key를 반환합니다.
   String getContestWeekKey(DateTime date);
+
+  String getLastWeekKey(DateTime date);
 }
 
 // date_util_impl.dart
@@ -22,5 +24,13 @@ class DateUtilImpl implements IDateUtil {
 
     // YYYY-회차 형태로 반환합니다 (예: 2025-15)
     return '${date.year}-$weekNumber';
+  }
+
+  @override
+
+  String getLastWeekKey(DateTime date) {
+    // 7일을 뺀 날짜를 기준으로 회차 키를 계산합니다.
+    final lastWeekDate = date.subtract(const Duration(days: 7));
+    return getContestWeekKey(lastWeekDate);
   }
 }

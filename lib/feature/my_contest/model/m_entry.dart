@@ -104,4 +104,9 @@ class EntryModel {
       totalScore: totalScore ?? this.totalScore,
     );
   }
+
+  @override
+  String toString() {
+    return 'EntryModel(entryId: $entryId, userId: $userId, regionCity: $regionCity, weekKey: $weekKey, photoUrl: $photoUrl, thumbnailUrl: $thumbnailUrl, snsId: $snsId, createdAt: $createdAt, status: $status, goldVotes: $goldVotes, silverVotes: $silverVotes, bronzeVotes: $bronzeVotes, totalScore: $totalScore)';
+  }
 }

@@ -45,6 +45,7 @@ app.*.map.json
 /android/app/release
 
 .env
+.cursorrules
 
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
@@ -52,6 +53,7 @@ firebase.json
 .firebaserc
 .firebase/
 firebase-debug.log
+firestore.rules 
 /lib/firebase_options.dart
 
 android/app/key.properties

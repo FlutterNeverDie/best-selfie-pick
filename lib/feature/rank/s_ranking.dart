@@ -26,7 +26,7 @@ class RankingScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title:
-        Text( 
+        Text(
           voteStatus.isVoted ? '베스트 픽 랭킹' : '베스트 픽 투표',
           style: TextStyle(
             fontSize: 18.sp,

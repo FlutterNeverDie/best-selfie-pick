@@ -28,7 +28,6 @@ final voteProvider = StateNotifierProvider<VoteNotifier, VotingStatus>((ref) {
   );
 });
 
-
 class VoteNotifier extends StateNotifier<VotingStatus> {
   final RankingRepository _repository;
   final String _userId;
@@ -39,11 +38,11 @@ class VoteNotifier extends StateNotifier<VotingStatus> {
   static const int MAX_PICKS = 3;
 
   VoteNotifier(
-      this._repository,
-      this._userId,
-      this._regionCity,
-      this._currentWeekKey,
-      ) : super(const VotingStatus()) {
+    this._repository,
+    this._userId,
+    this._regionCity,
+    this._currentWeekKey,
+  ) : super(const VotingStatus()) {
     // 💡 초기화 시 데이터 로드 시작
     if (_userId.isNotEmpty) {
       checkIfAlreadyVoted(); // 투표 완료 여부 선행 체크
@@ -57,7 +56,8 @@ class VoteNotifier extends StateNotifier<VotingStatus> {
 
   /// 투표 완료 기록이 있는지 확인하고 상태를 업데이트합니다.
   Future<void> checkIfAlreadyVoted() async {
-    if (_userId.isEmpty || _regionCity.isEmpty || _currentWeekKey.isEmpty) return;
+    if (_userId.isEmpty || _regionCity.isEmpty || _currentWeekKey.isEmpty)
+      return;
 
     try {
       final isVoted = await _repository.checkIfVoted(
@@ -75,7 +75,6 @@ class VoteNotifier extends StateNotifier<VotingStatus> {
       // UI에서 에러를 처리하도록 Exception을 던질 수도 있으나, 여기서는 상태만 업데이트
     }
   }
-
 
   // ====================================================================
   // 2. 데이터 로드 및 페이징 (후보 목록)
@@ -108,13 +107,17 @@ class VoteNotifier extends StateNotifier<VotingStatus> {
       // 새 후보 목록을 기존 목록에 추가
       final updatedCandidates = [...state.candidates, ...newCandidates];
 
+
+
       // 상태 업데이트
       if (mounted) {
         state = state.copyWith(
           candidates: updatedCandidates,
           isLoadingNextPage: false,
           hasMorePages: hasMore,
-          lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : state.lastDocument,
+          lastDocument: snapshot.docs.isNotEmpty
+              ? snapshot.docs.last
+              : state.lastDocument,
         );
       }
     } catch (e, stack) {
@@ -185,7 +188,7 @@ class VoteNotifier extends StateNotifier<VotingStatus> {
       // 3. 성공 시 상태 업데이트
       if (mounted) {
         state = state.copyWith(isVoted: true, isSubmitting: false);
-        debugPrint('투표 제출 성공: 랭킹 조회 화면으로 전환됩니다.');
+        debugPrint('투표 제출 성공: 랭킹 조회 화면으로 전환Current User UID:됩니다.');
       }
     } catch (e) {
       if (mounted) {

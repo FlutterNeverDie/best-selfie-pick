@@ -66,7 +66,7 @@ class WEntryApprovedView extends ConsumerWidget {
                 ),
                 SizedBox(height: 10.h),
                 Text(
-                  'SNS ID: ${currentEntry.snsId}',
+                  '@${currentEntry.snsId}',
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
