@@ -146,7 +146,7 @@ class MyEntryScreen extends ConsumerWidget {
                   return const WEntryNotEnteredView();
                 }
 
-                debugPrint('entryModel status : ${entryModel.status}');
+                debugPrint('[내 참가 상태 : ${entryModel.status}]');
 
                 // 💡 분리된 위젯 사용
                 switch (entryModel.status) {

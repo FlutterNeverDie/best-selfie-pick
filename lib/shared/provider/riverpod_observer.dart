@@ -11,6 +11,7 @@ class RiverpodObserver extends ProviderObserver {
   static const Set<String> _ignoredProviders = {
     //참가
     'EntryProvider',
+    'voteProvider',
 
 
 

@@ -30,7 +30,7 @@ class VoteRepository {
           .limit(1)
           .get();
 
-      debugPrint('[투표 완료 여부 결과]  ${querySnapshot.docs.length} documents.');
+      debugPrint('[투표 완료 여부 결과 ${querySnapshot.docs.isNotEmpty}]');
 
       return querySnapshot.docs.isNotEmpty; // 문서가 있으면 true (투표 완료)
     } on FirebaseException catch (e) {

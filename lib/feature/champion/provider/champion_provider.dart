@@ -6,59 +6,70 @@ import 'package:selfie_pick/feature/champion/provider/state/champion.state.dart'
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import '../../../shared/provider/contest_status/contest_status_provider.dart';
 
-
-
 // Provider 정의
 final championProvider =
-StateNotifierProvider.autoDispose<ChampionNotifier, ChampionState>((ref) {
-  final repository = ref.watch(championRepoProvider);
-  final authState = ref.watch(authProvider);
-  final contestStatus = ref.watch(contestStatusProvider);
-
-  // 필수 정보가 로드되지 않았을 경우 기본 상태 반환
-  if (authState.user?.region == null || contestStatus.lastSettledWeekKey == null) {
-    return ChampionNotifier(repository, null, null); // Region이나 WeekKey가 없으면 null 전달
-  }
-
-  return ChampionNotifier(
-      repository,
-      authState.user!.region, // User의 현재 지역
-      contestStatus.lastSettledWeekKey! // 지난 정산 회차 키
-  );
+NotifierProvider<ChampionNotifier, ChampionState>(() {
+  return ChampionNotifier();
 }, name: 'championProvider');
 
-class ChampionNotifier extends StateNotifier<ChampionState> {
-  final ChampionRepository _repository;
-  final String? _userRegion;
-  final String? _lastSettledWeekKey;
+class ChampionNotifier extends Notifier<ChampionState> {
+  ChampionRepository get _repository => ref.read(championRepoProvider);
 
-  ChampionNotifier(this._repository, this._userRegion, this._lastSettledWeekKey)
-      : super(const ChampionState()) {
-    _loadChampions();
+  @override
+  ChampionState build() {
+    // 1. 필요한 Provider들의 상태를 감시 (Watch)
+    final authState = ref.watch(authProvider);
+    final contestStatus = ref.watch(contestStatusProvider);
+
+    final String? userRegion = authState.user?.region;
+    final String? lastSettledWeekKey = contestStatus.lastSettledWeekKey;
+
+    // 2. 필수 조건 확인
+    if (userRegion == null || lastSettledWeekKey == null) {
+      // 필수 정보가 로드되지 않았을 경우, 에러 상태를 동기적으로 반환합니다.
+      return const ChampionState(error: '지역 설정 또는 정산 정보가 로드되지 않았습니다.');
+    }
+
+    // 3. Future.microtask로 초기 비동기 로드 호출
+    // build()가 완료되어 Notifier가 초기화된 후, 다음 마이크로태스크 큐에서 로드를 시작합니다.
+    Future.microtask(() => _loadChampions(userRegion, lastSettledWeekKey));
+
+    // 4. 로딩 시작 상태를 동기적으로 반환합니다.
+    return const ChampionState();
   }
 
-  Future<void> _loadChampions() async {
-    // 1. 필수 조건 확인: 지역 정보와 지난 정산 회차 키가 모두 있어야 함
-    if (_userRegion == null || _lastSettledWeekKey == null) {
-      state = state.copyWith(error: '지역 설정 또는 정산 정보가 로드되지 않았습니다.');
+  Future<void> _loadChampions(String userRegion, String lastSettledWeekKey) async {
+    // 💡 강화된 중복 호출 방지 가드:
+    // build()에서 이미 isLoading: true를 반환했기 때문에,
+    // 로직이 정상적으로 실행될 경우 이 가드에 걸려 바로 종료됩니다.
+    // 이는 상태 변경이 두 번 발생하는 것을 방지합니다.
+    if (state.isLoading) {
+      debugPrint('챔피언 로드 - 중복 호출을 방지, 조회 중단');
       return;
     }
 
-    state = state.copyWith(isLoading: true, error: null); // 에러 초기화
+    // 💡 상태 변경: 여기서는 로딩을 true로 재설정하지 않고 바로 로직을 수행합니다.
+    // state = state.copyWith(isLoading: true, error: null);
 
     try {
       // 2. Repository 호출: 현재 사용자 지역의 지난 정산 결과를 요청
       final champions = await _repository.fetchChampions(
-          _userRegion,
-          _lastSettledWeekKey
+          userRegion,
+          lastSettledWeekKey
       );
 
+      // 3. 로딩 상태 해제 및 결과 반영
       state = state.copyWith(
         isLoading: false,
         champions: champions,
+        error: null,
       );
+
+      debugPrint('로드 완료 champions 수 : ${champions.length}');
+
     } catch (e) {
       debugPrint('Error loading champions: $e');
+      // 4. 오류 발생 시 로딩 해제 및 오류 반영
       state = state.copyWith(
         isLoading: false,
         error: '챔피언 정보를 불러오는 데 실패했습니다.',

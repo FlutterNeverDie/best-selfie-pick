@@ -1,9 +1,8 @@
-// lib/feature/my_entry/s_entry_submission_screen.dart (수정)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/my_entry/widget/w_entry_submission_form.dart';
-import 'package:selfie_pick/core/theme/colors/app_color.dart'; // AppColor import 가정
+import 'package:selfie_pick/core/theme/colors/app_color.dart';
 
 class EntrySubmissionScreen extends StatelessWidget {
   static const String routeName = 'submit_entry';

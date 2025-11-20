@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:selfie_pick/core/data/collection.dart';
 
 import '../../../my_entry/model/m_entry.dart';
 
@@ -13,7 +14,6 @@ class ChampionRepository {
   final FirebaseFirestore _firestore;
 
   // 💡 V3.2: 챔피언 캐시 컬렉션을 사용합니다.
-  final String _collectionChampions = 'champions'; // 변경된 이름 사용
 
   ChampionRepository(this._firestore);
 
@@ -27,7 +27,7 @@ class ChampionRepository {
 
       // 1. champions/지역_주차 문서 조회
       final docSnapshot = await _firestore
-          .collection(_collectionChampions)
+          .collection(MyCollection.CHAMPION)
           .doc(championDocId)
           .get();
 

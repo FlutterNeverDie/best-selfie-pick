@@ -98,7 +98,7 @@ class VoteNotifier extends Notifier<VotingStatus> {
 
   /// 초기 데이터 로드 및 무한 스크롤 다음 페이지 로드 로직 통합
   Future<void> loadCandidates() async {
-    debugPrint('지역 참가자 로드 시작...');
+    debugPrint('[지역 참가자 로드 시작...]');
     // 💡  이미 로딩 중이거나, 페이지가 더 없으면 중단
     if ( state.isLoadingNextPage || !state.hasMorePages){
       debugPrint('로딩 중이거나 더 이상 페이지가 없습니다. 로드 중단.');
@@ -148,7 +148,7 @@ class VoteNotifier extends Notifier<VotingStatus> {
               : state.lastDocument,
           lastFetchedTime: DateTime.now(),
         );
-      debugPrint('지역 참가자 로드 Total: ${updatedCandidates.length}');
+      debugPrint('[지역 참가자 수: ${updatedCandidates.length}]');
     } catch (e, stack) {
       debugPrint('Error loading 참가자 조회: $e');
       state = state.copyWith(isLoadingNextPage: false); // 로딩만 해제

@@ -10,7 +10,6 @@ import '../../feature/notification/s_notification_settings.dart';
 import '../../feature/singup/s_email.dart';
 import '../../feature/singup/s_profile_setup.dart';
 import '../../feature/singup/s_signup.dart';
-import '../../feature/splash/s_splash.dart';
 
 
 
@@ -29,9 +28,9 @@ final List<GoRoute> appRoutes = [
     builder: (context, state) => const HomeScreen(),
     routes: [
       GoRoute(
-        path: 'submit_entry', // 전체 경로는 '/home/submit_entry'가 됨
-        name: EntrySubmissionScreen.routeName, // '/submit_entry'가 아니라 'submit_entry'나 다른 고유 이름으로 설정 권장
-        builder: (context, state) => const EntrySubmissionScreen(),
+        path: 'submit_entry',
+        name: EntrySubmissionScreen.routeName,
+        builder: (context, state) =>  EntrySubmissionScreen(),
       ),
       GoRoute(
         path: 'notifications',
