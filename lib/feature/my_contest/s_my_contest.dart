@@ -79,8 +79,6 @@ class MyEntryScreen extends ConsumerWidget {
                   case 'rejected':
                     return WEntryRejectedView(entry: entryModel);
                   case 'approved':
-                  case 'voting_active':
-                  // 'approved' 상태는 EntryNotifier에서 'voting_active'로 전환되므로, 동일 뷰 사용
                     return WEntryApprovedView(entry: entryModel);
                   default:
                     return Center(child: Text('알 수 없는 참가 상태입니다.', style: TextStyle(fontSize: 16.sp)));

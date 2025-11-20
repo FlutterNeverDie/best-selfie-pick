@@ -13,7 +13,7 @@ class EntryModel {
   final DateTime createdAt;
 
   // 상태 및 결과
-  final String status; // pending, rejected, voting_active, completed
+  final String status; // pending, rejected, approved, completed
   final int goldVotes;
   final int silverVotes;
   final int bronzeVotes;

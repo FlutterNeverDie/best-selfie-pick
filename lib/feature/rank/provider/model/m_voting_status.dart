@@ -45,4 +45,9 @@ class VotingStatus {
       lastDocument: lastDocument ?? this.lastDocument,
     );
   }
+
+  @override
+  String toString() {
+    return 'VotingStatus{candidates: $candidates, selectedPicks: $selectedPicks, isVoted: $isVoted, isSubmitting: $isSubmitting, isLoadingNextPage: $isLoadingNextPage, hasMorePages: $hasMorePages, lastDocument: $lastDocument}';
+  }
 }

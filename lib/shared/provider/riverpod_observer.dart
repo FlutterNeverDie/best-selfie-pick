@@ -9,9 +9,10 @@ class RiverpodObserver extends ProviderObserver {
   static Logger logger = Logger();
 
   static const Set<String> _ignoredProviders = {
-    'staffCallRepoProvider',
-    'areaFocusProvider',
-    'childFocusProvider',
+    //참가
+    'EntryProvider',
+
+
 
     // 인증
     'authRepoProvider',

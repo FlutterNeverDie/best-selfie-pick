@@ -21,8 +21,8 @@ class WEntryApprovedView extends ConsumerWidget {
     // 2. Notifier의 최신 데이터를 사용하거나, 초기 데이터를 사용합니다.
     final EntryModel currentEntry = latestEntryAsync.value ?? entry;
 
-    // 3. 상태 분기 (approved는 이미 voting_active로 전환되었을 것이므로, voting_active를 기준으로 봅니다.)
-    final isVotingActive = currentEntry.status == 'voting_active';
+    // 3. 상태 분기
+    final isVotingActive = currentEntry.status == 'approved';
 
     // 💡 Padding으로 감싸서 상위 SingleChildScrollView의 여백을 확보합니다.
     return Padding(

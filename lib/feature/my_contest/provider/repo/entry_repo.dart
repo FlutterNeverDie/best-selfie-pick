@@ -8,30 +8,26 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../shared/interface/i_date_util.dart';
+import '../../../rank/provider/repo/repo_vote.dart';
 import '../../model/m_entry.dart';
 
-
-
-
-
-// Repository Provider 정의: DB 인스턴스들을 주입합니다.
 final entryRepoProvider = Provider((ref) => EntryRepository(
   FirebaseFirestore.instance, // 인스턴스 주입
   FirebaseStorage.instance,   // 인스턴스 주입
 ));
 
 class EntryRepository {
+
+   static int CANDIDATE_BATCH_SIZE = 10;
+   static String  ENRTY_COLLECTION = 'contest_entries';
+
+
   // 💡 final 필드로 선언하고 생성자로부터 주입받습니다.
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
   // IDateUtil 구현체를 Repository 내부에서 인스턴스화합니다.
   final IDateUtil _dateUtil = DateUtilImpl();
-
-  // DB 경로: /artifacts/{appId}/public/data/contest_entries
-  // 💡 Note: 현재 DB 규칙과 일치시키기 위해 'contest_entries'로 임시 수정됨
-  // String get _collectionPath => 'artifacts/$_appId/public/data/contest_entries';
-  String get _collectionPath => 'contest_entries'; // <-- 임시 최상위 경로 사용 중
 
   // 💡 생성자를 통해 DB 및 Storage 인스턴스 주입
   EntryRepository(this._firestore, this._storage);
@@ -41,7 +37,7 @@ class EntryRepository {
   Future<EntryModel?> fetchCurrentEntry(String userId, String weekKey, String regionCity) async {
     try {
       final querySnapshot = await _firestore
-          .collection(_collectionPath)
+          .collection(ENRTY_COLLECTION)
           .where('userId', isEqualTo: userId)
           .where('weekKey', isEqualTo: weekKey)
           .where('regionCity', isEqualTo: regionCity)
@@ -167,7 +163,7 @@ class EntryRepository {
     debugPrint('$methodName: [전송 데이터 확인] Firestore로 전송될 Map: $dataToSave');
 
     try {
-      final docRef = await _firestore.collection(_collectionPath).add(dataToSave); // dataToSave 사용
+      final docRef = await _firestore.collection(ENRTY_COLLECTION).add(dataToSave); // dataToSave 사용
 
       // 저장된 문서 ID를 포함하여 EntryModel 반환
       return newEntry.copyWith(entryId: docRef.id);
@@ -178,30 +174,6 @@ class EntryRepository {
   }
 
 
-  // 4. 실시간 득표 수 스트림 (삭제됨 - 필요 시 복구)
-  /*
-  Stream<EntryModel> streamVotes(String entryId) {
-    // ...
-  }
-  */
-
-  /// 5. 관리자 승인 완료 후 상태 갱신 (핵심 로직)
-  /// * 💡 V3.0 로직: 관리자가 승인(approved)하면, 클라이언트가 바로 voting_active로 전환함.
-  Future<void> updateEntryStatusAfterApproval(String entryId, String nextWeekKey) async {
-    // ... (로직 유지)
-    try {
-      await _firestore.collection(_collectionPath).doc(entryId).update({
-        'status': 'voting_active',
-        'weekKey': nextWeekKey, // 현재 진행 중인 회차 키로 최종 확정
-        'startedAt': FieldValue.serverTimestamp(),
-      });
-      debugPrint('Entry status and weekKey updated to voting_active');
-    } catch (e) {
-      debugPrint('Error updating status after approval: $e');
-      throw Exception('참가 상태를 활성화하는데 실패했습니다.');
-    }
-  }
-
 
   /// 6. 참가 기록 및 사진 삭제 (반려 후 재신청 시 사용)
   Future<void> deleteEntryAndPhoto(EntryModel entry) async {
@@ -209,7 +181,7 @@ class EntryRepository {
 
     // 1. Firestore 문서 삭제
     try {
-      await _firestore.collection(_collectionPath).doc(entry.entryId).delete();
+      await _firestore.collection(ENRTY_COLLECTION).doc(entry.entryId).delete();
       debugPrint('$methodName: [성공] Firestore 문서 삭제 완료. EntryID: ${entry.entryId}');
     } catch (e) {
       // 권한 문제 등이 발생하면, 사용자에게는 재신청을 막지 않고 로그만 남김.
@@ -234,5 +206,25 @@ class EntryRepository {
       // 사진이 이미 삭제되었을 수도 있으므로, 오류가 발생해도 플로우는 계속 진행
       debugPrint('$methodName: [실패] Storage 사진 삭제 실패: $e');
     }
+  }
+
+
+  Future<QuerySnapshot<Map<String, dynamic>>> fetchCandidatesForVoting(
+      String regionCity, String weekKey,
+      {DocumentSnapshot? startAfterDoc}) async {
+    // ... (로직 유지)
+    Query query = _firestore
+        .collection(ENRTY_COLLECTION)
+        .where('regionCity', isEqualTo: regionCity)
+        .where('weekKey', isEqualTo: weekKey)
+        .where('status', isEqualTo: 'approved')
+        .orderBy('totalScore', descending: true);
+
+    if (startAfterDoc != null) {
+      query = query.startAfterDocument(startAfterDoc);
+    }
+
+    return await query.limit(CANDIDATE_BATCH_SIZE).get()
+    as QuerySnapshot<Map<String, dynamic>>;
   }
 }

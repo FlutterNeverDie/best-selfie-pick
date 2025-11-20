@@ -7,8 +7,6 @@ import '../../../shared/provider/contest_status/contest_status_provider.dart';
 import '../../auth/provider/auth_notifier.dart';
 import '../model/m_entry.dart';
 
-// EntryNotifier의 상태는 AsyncValue<EntryModel?> 형태입니다.
-// data: null -> 미참가 (Not Entered)
 final entryProvider = AsyncNotifierProvider<EntryNotifier, EntryModel?>(
   () => EntryNotifier(), name:  'EntryProvider',
 );
@@ -20,9 +18,8 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
   Future<EntryModel?> build() async {
     // 💡 세 가지 필수 조건 감시: UID, WeekKey, Region
     final authState = ref.watch(authProvider);
+    final userModel = authState.user; // UserNotifier에서 UserModel 로드 가정
     final contestStatus = ref.watch(contestStatusProvider);
-    final userModel =
-        ref.watch(authProvider).user; // UserNotifier에서 UserModel 로드 가정
 
     // 2. 인증/상태 로딩 및 필수 데이터 확인
     if (authState.isLoading ||
@@ -45,16 +42,6 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
         currentUserRegion, // 현재 유저의 설정 지역으로 조회 (지역 종속성)
       );
 
-      // 💡 상태 분기 로직: 'approved' → 'voting_active' 즉시 전환 (V3.0 즉시 참여 로직)
-      // 관리자 승인 완료 직후, 클라이언트가 바로 투표 가능 상태로 전환
-      if (currentEntry != null && currentEntry.status == 'approved') {
-        await _repository.updateEntryStatusAfterApproval(
-            currentEntry.entryId, currentWeekKey // 현재 회차로 weekKey를 최종 확정
-            );
-        // 상태 갱신된 모델을 수동으로 반환하여 UI에 반영
-        return currentEntry.copyWith(
-            status: 'voting_active', weekKey: currentWeekKey);
-      }
 
       return currentEntry;
     } catch (e) {
@@ -90,7 +77,7 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
 
         // 삭제 완료 후, 이 조건문을 통과하여 아래의 새 신청 플로우로 진입합니다.
       } else {
-        // pending, approved, voting_active 등의 상태라면 에러 반환 (중복 참가 방지)
+        // pending, approved 등의 상태라면 에러 반환 (중복 참가 방지)
         debugPrint(
             '$methodName: [에러] 이미 이번 주차 콘테스트에 참가 신청을 하셨습니다. 상태: ${currentEntry.status}');
         throw Exception('이미 이번 주차 콘테스트에 참가 신청을 하셨습니다. 상태를 확인하세요.');
@@ -132,9 +119,11 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
       debugPrint('$methodName: [성공] Notifier 상태 PENDING으로 업데이트 완료. 플로우 종료.');
     } catch (e, stack) {
       debugPrint('$methodName: [실패] 참가 신청 실패: $e');
-      // 오류 시 이전 상태 유지 후 에러 메시지 전달 (copyWithPrevious)
       state = AsyncValue.error(e, stack);
-      throw e;
+      rethrow;
     }
   }
+
+
+
 }

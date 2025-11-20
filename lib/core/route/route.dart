@@ -4,6 +4,7 @@ import 'package:selfie_pick/feature/auth/s_auth_gate.dart';
 import 'package:selfie_pick/feature/notice/s_notice.dart';
 import 'package:selfie_pick/feature/singup/s_login.dart';
 
+import '../../feature/inquiry/s_inquiry.dart';
 import '../../feature/my_contest/s_entry_submission_screen.dart';
 import '../../feature/notification/s_notification_settings.dart';
 import '../../feature/singup/s_email.dart';
@@ -41,6 +42,12 @@ final List<GoRoute> appRoutes = [
         path: 'notice',
         name: NoticeScreen.routeName,
         builder: (context, state) => const NoticeScreen(),
+      ),
+
+      GoRoute(
+        path: 'inquiry',
+        name: InquiryScreen.routeName,
+        builder: (context, state) => const InquiryScreen(),
       ),
     ],
   ),

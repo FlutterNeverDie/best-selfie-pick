@@ -23,4 +23,10 @@ class ChampionState {
       error: error,
     );
   }
+
+  //toStirng
+  @override
+  String toString() {
+    return 'ChampionState{isLoading: $isLoading, champions: $champions, error: $error}';
+  }
 }

@@ -3,45 +3,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// 💡 페이징 크기 상수 정의
-const int CANDIDATE_BATCH_SIZE = 10;
+import '../../../my_contest/provider/repo/entry_repo.dart';
 
 // Repository Provider 정의: DB 인스턴스들을 주입합니다.
-final rankingRepoProvider =
-    Provider<RankingRepository>((ref) => RankingRepository(
-          FirebaseFirestore.instance,
-        ));
+final voteRepoProvider = Provider<VoteRepository>((ref) => VoteRepository(
+      FirebaseFirestore.instance,
+    ));
 
-class RankingRepository {
+class VoteRepository {
   final FirebaseFirestore _firestore;
+
   // final FirebaseFunctions _functions; // Cloud Functions 제거됨
-  final String _collectionPath = 'contest_entries';
   final String _collectionVotes = 'votes';
 
   // 💡 Note: 실제 앱 ID 경로는 EntryRepository와 동일하게 처리해야 함.
   // 여기서는 편의상 EntryRepository의 로직이 적용되었다고 가정하고 컬렉션 이름만 사용.
 
-  RankingRepository(this._firestore);
-
-  /// 1. 투표 후보 목록 로드 (Infinite Scroll 지원)
-  Future<QuerySnapshot<Map<String, dynamic>>> fetchCandidatesForVoting(
-      String regionCity, String weekKey,
-      {DocumentSnapshot? startAfterDoc}) async {
-    // ... (로직 유지)
-    Query query = _firestore
-        .collection(_collectionPath)
-        .where('regionCity', isEqualTo: regionCity)
-        .where('weekKey', isEqualTo: weekKey)
-        .where('status', isEqualTo: 'voting_active')
-        .orderBy('totalScore', descending: true);
-
-    if (startAfterDoc != null) {
-      query = query.startAfterDocument(startAfterDoc);
-    }
-
-    return await query.limit(CANDIDATE_BATCH_SIZE).get()
-        as QuerySnapshot<Map<String, dynamic>>;
-  }
+  VoteRepository(this._firestore);
 
   /// 2. 투표 완료 여부 확인 (V3.0: 주차별 지역당 1회 투표)
   /// * submitVote 함수와 동일한 검증 로직을 사용합니다.
@@ -57,7 +35,7 @@ class RankingRepository {
           .limit(1)
           .get();
 
-      debugPrint('[본인 투표 기록 조회 결과]  ${querySnapshot.docs.length} documents.');
+      debugPrint('[투표 완료 여부 결과]  ${querySnapshot.docs.length} documents.');
 
       return querySnapshot.docs.isNotEmpty; // 문서가 있으면 true (투표 완료)
     } on FirebaseException catch (e) {
@@ -116,7 +94,9 @@ class RankingRepository {
           });
 
           // 2-2. contest_entries 점수 증가
-          final entryRef = _firestore.collection(_collectionPath).doc(entryId);
+          final entryRef = _firestore
+              .collection(EntryRepository.ENRTY_COLLECTION)
+              .doc(entryId);
 
           int scoreToAdd = 0;
           String fieldToIncrement = '';
@@ -158,6 +138,4 @@ class RankingRepository {
       throw Exception('투표 처리 중 오류가 발생했습니다: $e');
     }
   }
-  }
-
-
+}

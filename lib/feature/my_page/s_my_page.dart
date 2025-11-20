@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/auth/s_auth_gate.dart';
+import 'package:selfie_pick/feature/inquiry/s_inquiry.dart';
 
+import '../../core/data/const.dart';
 import '../auth/provider/auth_notifier.dart'; // Auth Notifier import
 import '../../model/m_user.dart';
 import '../notice/s_notice.dart';
 import '../notification/s_notification_settings.dart'; // UserModel import (경로가 m_user.dart라고 가정)
+import 'package:url_launcher/url_launcher.dart';
 
 
 class MyPageScreen extends ConsumerWidget {
@@ -183,16 +186,14 @@ class MyPageScreen extends ConsumerWidget {
               title: '1:1 문의',
               icon: Icons.support_agent,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('문의하기 화면으로 이동합니다.')));
+                context.goNamed(InquiryScreen.routeName);
               },
             ),
             // 4. 운영 정책
             _buildMenuItem(
               title: '운영 정책 및 약관',
               icon: Icons.policy,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('운영 정책 화면으로 이동합니다.')));
-              },
+              onTap: _launchUrl,
             ),
 
             // --- C. 계정 관리 섹션 ---
@@ -223,5 +224,16 @@ class MyPageScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+
+
+  Future<void> _launchUrl() async {
+    final Uri uri = Uri.parse(POLICY_URL);
+    if ((uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty) {
+       await launchUrl(uri);
+    }
+    return;
   }
 }

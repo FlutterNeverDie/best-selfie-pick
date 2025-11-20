@@ -26,7 +26,6 @@ class WCandidateItem extends ConsumerWidget {
 
     // 💡 선택 시 배경 색상 및 테두리 효과
     final itemColor = isSelected ? AppColor.primary.withOpacity(0.8) : Colors.white;
-    final borderColor = isSelected ? AppColor.primary : Colors.grey.shade300;
 
     return GestureDetector(
       onTap: () {
