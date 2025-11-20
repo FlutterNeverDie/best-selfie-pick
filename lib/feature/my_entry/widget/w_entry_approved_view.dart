@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // ConsumerWidget 사용
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:selfie_pick/feature/my_contest/provider/entry_provider.dart';
+import 'package:selfie_pick/feature/my_entry/provider/entry_provider.dart';
 import '../../../core/theme/colors/app_color.dart';
 import '../../../shared/widget/w_cached_image.dart';
 import '../model/m_entry.dart';
@@ -32,7 +32,7 @@ class WEntryApprovedView extends ConsumerWidget {
         children: [
           // --- 헤더 및 상태 ---
           Text(
-            '${isVotingActive ? "투표 진행 중" : "정산 완료"}',
+            isVotingActive ? "투표 진행 중" : "비공개",
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: isVotingActive ? AppColor.primary : Colors.grey,
               fontWeight: FontWeight.bold,

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 
 import '../champion/s_champion.dart';
-import '../my_contest/s_my_contest.dart';
+import '../my_entry/s_my_entry.dart';
 import '../my_page/s_my_page.dart';
 import '../rank/s_ranking.dart';
 // TODO: 실제 화면 파일 import

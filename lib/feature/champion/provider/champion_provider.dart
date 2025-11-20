@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/feature/champion/provider/repo/repo_champion.dart';
 import 'package:selfie_pick/feature/champion/provider/state/champion.state.dart';
-import 'package:selfie_pick/feature/my_contest/model/m_entry.dart';
+import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import '../../../shared/provider/contest_status/contest_status_provider.dart';
 
 

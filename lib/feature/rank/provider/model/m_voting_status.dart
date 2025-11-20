@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../../../my_contest/model/m_entry.dart';
+import '../../../my_entry/model/m_entry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 @immutable

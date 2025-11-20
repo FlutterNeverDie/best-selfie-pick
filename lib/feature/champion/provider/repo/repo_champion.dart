@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../my_contest/model/m_entry.dart';
+import '../../../my_entry/model/m_entry.dart';
 
 // Repository Provider 정의
 final championRepoProvider = Provider((ref) => ChampionRepository(

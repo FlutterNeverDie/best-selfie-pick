@@ -1,5 +1,5 @@
 // 챔피언 상태 모델 (복사)
-import '../../../my_contest/model/m_entry.dart';
+import '../../../my_entry/model/m_entry.dart';
 
 class ChampionState {
   final bool isLoading;

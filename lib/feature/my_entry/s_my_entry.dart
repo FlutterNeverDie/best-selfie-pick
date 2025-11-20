@@ -1,15 +1,15 @@
-// lib/feature/my_contest/s_my_entry_screen.dart (RefreshIndicator 적용)
+// lib/feature/my_entry/s_my_entry_screen.dart (RefreshIndicator 적용)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:selfie_pick/feature/my_contest/provider/entry_provider.dart';
+import 'package:selfie_pick/feature/my_entry/provider/entry_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 // 💡 분리된 위젯 파일 import
-import 'package:selfie_pick/feature/my_contest/widget/w_entry_not_entered_view.dart';
-import 'package:selfie_pick/feature/my_contest/widget/w_entry_approved_view.dart';
-import 'package:selfie_pick/feature/my_contest/widget/w_entry_pending_view.dart';
-import 'package:selfie_pick/feature/my_contest/widget/w_entry_rejected_view.dart';
+import 'package:selfie_pick/feature/my_entry/widget/w_entry_not_entered_view.dart';
+import 'package:selfie_pick/feature/my_entry/widget/w_entry_approved_view.dart';
+import 'package:selfie_pick/feature/my_entry/widget/w_entry_pending_view.dart';
+import 'package:selfie_pick/feature/my_entry/widget/w_entry_rejected_view.dart';
 
 import '../../core/theme/colors/app_color.dart';
 

@@ -2,8 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:selfie_pick/core/data/collection.dart';
 
-import '../../../my_contest/provider/repo/entry_repo.dart';
+import '../../../my_entry/provider/repo/entry_repo.dart';
 
 // Repository Provider 정의: DB 인스턴스들을 주입합니다.
 final voteRepoProvider = Provider<VoteRepository>((ref) => VoteRepository(
@@ -12,12 +13,6 @@ final voteRepoProvider = Provider<VoteRepository>((ref) => VoteRepository(
 
 class VoteRepository {
   final FirebaseFirestore _firestore;
-
-  // final FirebaseFunctions _functions; // Cloud Functions 제거됨
-  final String _collectionVotes = 'votes';
-
-  // 💡 Note: 실제 앱 ID 경로는 EntryRepository와 동일하게 처리해야 함.
-  // 여기서는 편의상 EntryRepository의 로직이 적용되었다고 가정하고 컬렉션 이름만 사용.
 
   VoteRepository(this._firestore);
 
@@ -28,7 +23,7 @@ class VoteRepository {
     try {
       // 💡 votes_record 컬렉션에서 해당 사용자가 이 주차, 이 지역에 투표했는지 확인
       final querySnapshot = await _firestore
-          .collection(_collectionVotes)
+          .collection(MyCollection.VOTES)
           .where('userId', isEqualTo: userId)
           .where('weekKey', isEqualTo: weekKey)
           .where('regionId', isEqualTo: regionId)
@@ -83,7 +78,7 @@ class VoteRepository {
           final voteType = vote['voteType']!;
 
           // 2-1. votes 컬렉션에 기록 추가
-          final voteRef = _firestore.collection(_collectionVotes).doc();
+          final voteRef = _firestore.collection(MyCollection.VOTES).doc();
           transaction.set(voteRef, {
             'userId': userId,
             'weekKey': weekKey,
@@ -95,7 +90,7 @@ class VoteRepository {
 
           // 2-2. contest_entries 점수 증가
           final entryRef = _firestore
-              .collection(EntryRepository.ENRTY_COLLECTION)
+              .collection(MyCollection.ENTRIES)
               .doc(entryId);
 
           int scoreToAdd = 0;
@@ -123,7 +118,7 @@ class VoteRepository {
         // 3. 투표 완료 기록 생성 (votes_record)
         // 중복 방지를 위해 문서 ID를 지정하는 것이 안전하지만,
         // 기존 로직(자동 ID)을 따른다면 아래와 같습니다.
-        final recordRef = _firestore.collection(_collectionVotes).doc();
+        final recordRef = _firestore.collection(MyCollection.VOTES).doc();
         transaction.set(recordRef, {
           'userId': userId,
           'weekKey': weekKey,

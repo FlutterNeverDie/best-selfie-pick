@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:selfie_pick/model/m_user.dart';
 
+import '../../../../core/data/collection.dart';
+
 enum EmailCheckStatus {
   available, // 사용 가능
   emailAlreadyInUse, // 이메일/비밀번호 가입 계정 중복
@@ -21,12 +23,10 @@ class AuthRepo {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // 🎯 GoogleSignIn 싱글톤 인스턴스를 필드로 참조 (정상 코드)
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   AuthRepo({required this.ref});
 
-  static const String _usersCollection = 'users';
 
   /// 2. 이메일 회원가입 로직 (Firebase Auth & Firestore 데이터 저장)
   Future<UserModel> signUp({
@@ -60,7 +60,7 @@ class AuthRepo {
       );
 
       await _firestore
-          .collection(_usersCollection)
+          .collection(MyCollection.USERS)
           .doc(user.uid)
           .set(userModel.toMap());
 
@@ -122,7 +122,7 @@ class AuthRepo {
 
       // 2. Firestore 저장 (최종 문서 생성)
       await _firestore
-          .collection(_usersCollection)
+          .collection(MyCollection.USERS)
           .doc(uid)
           .set(userModel.toMap());
 
@@ -210,7 +210,7 @@ class AuthRepo {
 
   /// 6. 내부적으로 Firestore에서 UserModel을 가져오는 로직 (공통 사용)
   Future<UserModel?> _fetchUserModel(String uid) async {
-    final doc = await _firestore.collection(_usersCollection).doc(uid).get();
+    final doc = await _firestore.collection(MyCollection.USERS).doc(uid).get();
 
     if (!doc.exists) {
       // Firestore 데이터가 없으면 Firebase Auth는 있지만 앱 데이터가 없는 경우
@@ -230,7 +230,7 @@ class AuthRepo {
     try {
       // 1. Firestore에서 이메일 일치 문서 조회
       final QuerySnapshot result = await _firestore
-          .collection(_usersCollection)
+          .collection(MyCollection.USERS)
           .where('email', isEqualTo: emailAddress)
           .limit(1)
           .get();
@@ -255,5 +255,58 @@ class AuthRepo {
       print('Firestore lookup error: $e');
       throw Exception('Failed to check email existence in Firestore: $e');
     }
+  }
+
+  /// 12. 회원 탈퇴 로직 (계정 삭제 및 DB 데이터 삭제)
+  Future<void> deleteAccount(String uid) async {
+    final user = _auth.currentUser;
+    if (user == null || user.uid != uid) {
+      throw Exception('현재 인증된 사용자가 유효하지 않습니다.');
+    }
+
+    // 💡 트랜잭션을 사용하여 Firestore 데이터 삭제와 Auth 계정 삭제를 원자적으로 처리
+    // Note: Firestore 트랜잭션은 여러 문서에 걸쳐 쓰기 작업을 수행합니다.
+    await _firestore.runTransaction((transaction) async {
+      // 1. Firestore에서 UserModel 문서 삭제
+      final userRef = _firestore.collection(MyCollection.USERS).doc(uid);
+      transaction.delete(userRef);
+
+      // 2. 다른 사용자 데이터 삭제 (참가, 투표 기록 등)
+      // 🚨 주의: 트랜잭션 내에서 collection group 쿼리는 불가능하며,
+      // 모든 하위 컬렉션의 문서를 트랜잭션으로 삭제하는 것은 비효율적입니다.
+      // Firestore 문서 개별 삭제만 허용합니다. (CF 또는 관리자 앱 권장)
+
+      // MVP 범위에서 현재 사용자의 투표 기록 및 참가 기록만 삭제합니다.
+
+      // 2-1. contest_entries (본인의 참가 기록) 삭제
+      final entrySnapshot = await _firestore.collection(MyCollection.ENTRIES)
+          .where('userId', isEqualTo: uid)
+          .get();
+
+      for (final doc in entrySnapshot.docs) {
+        transaction.delete(doc.reference);
+        // 💡 관련 사진도 Storage에서 삭제해야 하지만, 트랜잭션 내에서 처리 불가하며,
+        // CF 트리거 또는 별도 함수 호출이 필요합니다. 여기서는 DB만 삭제합니다.
+      }
+
+      // 2-2. votes (본인의 투표 기록) 삭제
+      final votesSnapshot = await _firestore.collection(MyCollection.VOTES)
+          .where('userId', isEqualTo: uid)
+          .get();
+
+      for (final doc in votesSnapshot.docs) {
+        transaction.delete(doc.reference);
+      }
+
+      // 3. Firestore 데이터 삭제 완료 후, Firebase Auth 계정 삭제 (비동기)
+      // 트랜잭션 내에서는 비동기 작업을 피해야 하지만, Auth 삭제는 DB 트랜잭션 바깥에서 처리하는 것이 일반적입니다.
+      // 여기서는 트랜잭션을 commit하고, 이후 Auth 삭제를 실행합니다.
+    });
+
+    // 4. Firebase Auth 계정 삭제 (트랜잭션 바깥에서 최종 처리)
+    await user.delete();
+
+    // 5. 소셜 SDK 세션 정리 (로그아웃 로직 재사용)
+    await signOut();
   }
 }

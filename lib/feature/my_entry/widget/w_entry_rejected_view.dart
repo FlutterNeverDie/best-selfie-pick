@@ -1,10 +1,10 @@
-// lib/feature/my_contest/widget/w_entry_rejected_view.dart (수정)
+// lib/feature/my_entry/widget/w_entry_rejected_view.dart (수정)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:selfie_pick/feature/my_contest/model/m_entry.dart';
+import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 
 import '../../../shared/widget/w_cached_image.dart';

@@ -5,7 +5,7 @@ import 'package:selfie_pick/feature/notice/s_notice.dart';
 import 'package:selfie_pick/feature/singup/s_login.dart';
 
 import '../../feature/inquiry/s_inquiry.dart';
-import '../../feature/my_contest/s_entry_submission_screen.dart';
+import '../../feature/my_entry/s_entry_submission_screen.dart';
 import '../../feature/notification/s_notification_settings.dart';
 import '../../feature/singup/s_email.dart';
 import '../../feature/singup/s_profile_setup.dart';

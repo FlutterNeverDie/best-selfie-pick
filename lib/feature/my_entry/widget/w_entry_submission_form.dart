@@ -7,7 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/provider/auth_notifier.dart';
-import '../../my_contest/provider/entry_provider.dart';
+import '../../my_entry/provider/entry_provider.dart';
 
 // 참가 신청 폼: 사진 선택 및 SNS ID 입력을 처리하고 EntryNotifier에 제출합니다.
 // ConsumerWidget 대신 ConsumerStatefulWidget을 사용하여 폼 상태(텍스트, 이미지)를 관리합니다.

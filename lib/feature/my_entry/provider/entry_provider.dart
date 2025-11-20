@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:selfie_pick/feature/my_contest/provider/repo/entry_repo.dart';
+import 'package:selfie_pick/feature/my_entry/provider/repo/entry_repo.dart';
 
 import '../../../shared/provider/contest_status/contest_status_provider.dart';
 import '../../auth/provider/auth_notifier.dart';
@@ -18,7 +18,7 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
   Future<EntryModel?> build() async {
     // 💡 세 가지 필수 조건 감시: UID, WeekKey, Region
     final authState = ref.watch(authProvider);
-    final userModel = authState.user; // UserNotifier에서 UserModel 로드 가정
+    final userModel = authState.user;
     final contestStatus = ref.watch(contestStatusProvider);
 
     // 2. 인증/상태 로딩 및 필수 데이터 확인
@@ -31,7 +31,7 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
 
     final userId = authState.user!.uid;
     final currentWeekKey = contestStatus.currentWeekKey!;
-    final currentUserRegion = userModel.region; // 현재 사용자의 설정 지역
+    final currentUserRegion = userModel.region;
 
     // 3. 현재 주차, 현재 지역, 현재 사용자의 참가 내역 조회 시도
     // 💡 V3.0 핵심: 이 쿼리가 null을 반환하면 미참가로 간주됨 (지난 회차/다른 지역 기록 자동 제외)
@@ -119,6 +119,52 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
       debugPrint('$methodName: [성공] Notifier 상태 PENDING으로 업데이트 완료. 플로우 종료.');
     } catch (e, stack) {
       debugPrint('$methodName: [실패] 참가 신청 실패: $e');
+      state = AsyncValue.error(e, stack);
+      rethrow;
+    }
+  }
+
+  /// 8. 💡 [신규] 투표 비공개 전환 (approved -> private)
+  Future<void> setEntryPrivate() async {
+    final entry = state.value;
+    if (entry == null || entry.status != 'approved') {
+      throw Exception('현재 투표 활성화 상태가 아니므로 비공개로 전환할 수 없습니다.');
+    }
+
+    state = const AsyncValue.loading();
+
+    try {
+      // 1. DB 상태 변경 요청
+      await _repository.setEntryStatus(entry.entryId, 'private');
+
+      // 2. 상태 업데이트: Notifier 상태를 'private'으로 갱신
+      state = AsyncValue.data(entry.copyWith(status: 'private'));
+
+    } catch (e, stack) {
+      // 오류 발생 시 이전 상태 유지하고 에러 반환
+      state = AsyncValue.error(e, stack);
+      rethrow;
+    }
+  }
+
+  /// 9. 💡 [신규] 투표 공개 전환 (private -> approved)
+  Future<void> setEntryPublic() async {
+    final entry = state.value;
+    if (entry == null || entry.status != 'private') {
+      throw Exception('현재 비공개 상태가 아니므로 공개로 전환할 수 없습니다.');
+    }
+
+    state = const AsyncValue.loading();
+
+    try {
+      // 1. DB 상태 변경 요청
+      await _repository.setEntryStatus(entry.entryId, 'approved');
+
+      // 2. 상태 업데이트: Notifier 상태도 'approved'로 갱신
+      state = AsyncValue.data(entry.copyWith(status: 'approved'));
+
+    } catch (e, stack) {
+      // 오류 발생 시 기존 상태 유지하고 에러 반환
       state = AsyncValue.error(e, stack);
       rethrow;
     }

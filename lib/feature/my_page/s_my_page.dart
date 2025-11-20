@@ -6,12 +6,12 @@ import 'package:selfie_pick/feature/auth/s_auth_gate.dart';
 import 'package:selfie_pick/feature/inquiry/s_inquiry.dart';
 
 import '../../core/data/const.dart';
+import '../../shared/dialog/w_custom_confirm_dialog.dart';
 import '../auth/provider/auth_notifier.dart'; // Auth Notifier import
 import '../../model/m_user.dart';
 import '../notice/s_notice.dart';
 import '../notification/s_notification_settings.dart'; // UserModel import (경로가 m_user.dart라고 가정)
 import 'package:url_launcher/url_launcher.dart';
-
 
 class MyPageScreen extends ConsumerWidget {
   const MyPageScreen({super.key});
@@ -28,7 +28,8 @@ class MyPageScreen extends ConsumerWidget {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.grey.shade100, width: 1.h)),
+          border: Border(
+              bottom: BorderSide(color: Colors.grey.shade100, width: 1.h)),
         ),
         child: Row(
           children: [
@@ -43,7 +44,8 @@ class MyPageScreen extends ConsumerWidget {
               ),
             ),
             const Spacer(),
-            Icon(Icons.arrow_forward_ios, size: 16.sp, color: Colors.grey.shade400),
+            Icon(Icons.arrow_forward_ios,
+                size: 16.sp, color: Colors.grey.shade400),
           ],
         ),
       ),
@@ -54,19 +56,13 @@ class MyPageScreen extends ConsumerWidget {
   void _handleSignOut(BuildContext context, WidgetRef ref) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('로그아웃 확인'),
-        content: const Text('정말로 로그아웃 하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('로그아웃', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+      routeSettings: RouteSettings(name: 'logout_dialog'),
+      // 🚨 WCustomConfirmDialog 적용
+      builder: (context) => const WCustomConfirmDialog(
+        title: '로그아웃 확인',
+        content: '정말로 로그아웃 하시겠습니까?',
+        confirmText: '로그아웃', // '확인' 대신 '로그아웃' 텍스트 사용
+        cancelText: '취소',
       ),
     );
 
@@ -74,18 +70,51 @@ class MyPageScreen extends ConsumerWidget {
       try {
         await ref.read(authProvider.notifier).signOut();
         if (context.mounted) {
-          // context.go를 사용하여 AuthGateScreen으로 이동시키면,
-          // AuthGateScreen이 로그아웃 상태임을 확인하고 최종적으로 SignupScreen으로 리디렉션합니다.
+          // go_router를 통해 AuthGateScreen으로 이동 (깔끔한 라우팅 로직)
           context.go(AuthGateScreen.routeName);
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그아웃 실패: ${e.toString()}')),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('로그아웃 실패: ${e.toString()}')),
+          );
+        }
       }
     }
   }
 
+  // ------------------------------------------------------------------
+  // --- 🎯 회원 탈퇴 핸들러 (새로 추가) ---
+  // ------------------------------------------------------------------
+  void _handleWithdrawal(BuildContext context, WidgetRef ref) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => const WCustomConfirmDialog(
+        title: '회원 탈퇴 확인',
+        // 🚨 내용 강조
+        content: '모든 데이터는 복구할 수 없습니다.\n정말로 탈퇴하시겠습니까?',
+        confirmText: '탈퇴하기', // 파괴적 작업은 '탈퇴하기'로 명확히 표시
+        cancelText: '취소',
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        // 🚨 Auth Notifier의 withdraw 메서드 호출 (가정)
+        await ref.read(authProvider.notifier).withdraw();
+        if (context.mounted) {
+          // 탈퇴 성공 후 로그인 게이트로 이동
+          context.go(AuthGateScreen.routeName);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('회원 탈퇴 실패: ${e.toString()}')),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -118,7 +147,10 @@ class MyPageScreen extends ConsumerWidget {
                     backgroundColor: Theme.of(context).primaryColor,
                     child: Text(
                       user?.email.substring(0, 1).toUpperCase() ?? '?',
-                      style: TextStyle(fontSize: 24.sp, color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 24.sp,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                   SizedBox(width: 16.w),
@@ -127,29 +159,41 @@ class MyPageScreen extends ConsumerWidget {
                     children: [
                       Text(
                         user?.email ?? '로그인 필요',
-                        style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 18.sp, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 4.h),
                       Row(
                         children: [
                           // 지역 (시 단위)
-                          Icon(Icons.location_on, size: 16.sp, color: Colors.grey),
+                          Icon(Icons.location_on,
+                              size: 16.sp, color: Colors.grey),
                           SizedBox(width: 4.w),
                           Text(
-                            user?.region == 'NotSet' ? '지역 미설정' : user?.region ?? '미설정',
-                            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
+                            user?.region == 'NotSet'
+                                ? '지역 미설정'
+                                : user?.region ?? '미설정',
+                            style: TextStyle(
+                                fontSize: 14.sp, color: Colors.grey.shade700),
                           ),
                           SizedBox(width: 12.w),
                           // 성별
                           Icon(
-                            user?.gender == 'Female' ? Icons.female : Icons.male,
+                            user?.gender == 'Female'
+                                ? Icons.female
+                                : Icons.male,
                             size: 16.sp,
-                            color: user?.gender == 'Female' ? Colors.pink : Colors.blue,
+                            color: user?.gender == 'Female'
+                                ? Colors.pink
+                                : Colors.blue,
                           ),
                           SizedBox(width: 4.w),
                           Text(
-                            user?.gender == 'Female' ? '여성' : (user?.gender == 'Male' ? '남성' : '미설정'),
-                            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
+                            user?.gender == 'Female'
+                                ? '여성'
+                                : (user?.gender == 'Male' ? '남성' : '미설정'),
+                            style: TextStyle(
+                                fontSize: 14.sp, color: Colors.grey.shade700),
                           ),
                         ],
                       ),
@@ -162,7 +206,8 @@ class MyPageScreen extends ConsumerWidget {
             // --- B. 설정 및 고객 지원 섹션 ---
             Padding(
               padding: EdgeInsets.symmetric(vertical: 10.h),
-              child: Text('   설정 및 지원', style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
+              child: Text('   설정 및 지원',
+                  style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
             ),
 
             // 1. 알림 설정
@@ -199,7 +244,8 @@ class MyPageScreen extends ConsumerWidget {
             // --- C. 계정 관리 섹션 ---
             Padding(
               padding: EdgeInsets.symmetric(vertical: 10.h),
-              child: Text('   계정 관리', style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
+              child: Text('   계정 관리',
+                  style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
             ),
 
             // 5. 로그아웃
@@ -214,9 +260,7 @@ class MyPageScreen extends ConsumerWidget {
             _buildMenuItem(
               title: '회원 탈퇴',
               icon: Icons.person_remove,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('회원 탈퇴 처리 화면으로 이동합니다.')));
-              },
+              onTap: () => _handleWithdrawal(context, ref),
               titleColor: Colors.red,
             ),
             SizedBox(height: 50.h),
@@ -226,13 +270,11 @@ class MyPageScreen extends ConsumerWidget {
     );
   }
 
-
-
   Future<void> _launchUrl() async {
     final Uri uri = Uri.parse(POLICY_URL);
     if ((uri.scheme == 'http' || uri.scheme == 'https') &&
         uri.host.isNotEmpty) {
-       await launchUrl(uri);
+      await launchUrl(uri);
     }
     return;
   }

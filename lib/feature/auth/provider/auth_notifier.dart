@@ -262,5 +262,41 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  /// 11. 회원 탈퇴 함수 (Auth/DB 계정 영구 삭제)
+  Future<void> withdraw() async {
+    final uid = state.user?.uid;
+    if (uid == null) {
+      // 이미 로그아웃되었거나 유효하지 않은 상태
+      state = AuthState(isLoading: false, error: '유효한 사용자 정보가 없습니다.');
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // Repository를 통해 Auth 계정 삭제 및 DB 문서 삭제를 시도합니다.
+      await _repository.deleteAccount(uid);
+
+      // 탈퇴 성공 후 상태 초기화 (user: null)
+      state = AuthState(isLoading: false);
+
+    } on FirebaseAuthException catch (e) {
+      // 재인증 필요 오류 등 FirebaseAuth 관련 오류 처리
+      String message = '탈퇴 실패: 인증 정보가 만료되었습니다. 다시 로그인 후 시도해 주세요.';
+      if (e.code == 'requires-recent-login') {
+        message = '보안을 위해 다시 로그인 후 시도해 주세요.';
+      } else {
+        message = '탈퇴 처리 중 오류 발생: ${e.message ?? e.code}';
+      }
+
+      state = state.copyWith(isLoading: false, error: message);
+      rethrow;
+    } catch (e) {
+      // 기타 알 수 없는 오류 처리
+      state = state.copyWith(isLoading: false, error: '회원 탈퇴 중 알 수 없는 오류가 발생했습니다.');
+      rethrow;
+    }
+  }
+
 
 }

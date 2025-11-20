@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:selfie_pick/feature/my_contest/model/m_entry.dart';
+import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 
 /// 🎨 각 랭킹 아이템을 나타내는 재사용 가능한 StatelessWidget
@@ -18,11 +18,12 @@ class WRankingListItem extends StatelessWidget {
   });
 
   Color _getRankColor() {
-    // 1~3위 순위 색상 정의 (골드, 실버, 브론즈)
+    // 1~3위 순위 색상 정의
     if (rank == 1) return const Color(0xFFFFD700);
     if (rank == 2) return const Color(0xFFC0C0C0);
     if (rank == 3) return const Color(0xFFCD7F32);
-    return AppColor.lightGrey;
+    // 4위 이하의 경우, 디자인 요소로 사용되는 색상이 없으므로 투명하게 설정합니다.
+    return Colors.transparent;
   }
 
   bool get isTopThree => rank <= 3;
@@ -31,11 +32,10 @@ class WRankingListItem extends StatelessWidget {
     if (rank == 1) return '1st';
     if (rank == 2) return '2nd';
     if (rank == 3) return '3rd';
-    // 4위부터는 'th'
-    return '${rank}th';
+    return ''; // 4위 이하에서는 순위를 반환하지 않습니다.
   }
 
-  // 💡 커스텀 복사 로직: 길게 눌렀을 때 SNS ID를 복사합니다.
+  // 커스텀 복사 로직
   void _copySnsId(BuildContext context) {
     Clipboard.setData(ClipboardData(text: '@${entry.snsId}')).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -52,12 +52,12 @@ class WRankingListItem extends StatelessWidget {
     final rankColor = _getRankColor();
     final isFirst = rank == 1;
 
-    // 💡 1~3위 크기 및 스타일 변수 설정
-    final double verticalPadding = isTopThree ? 20.h : 12.h;
-    final double elevation = isTopThree ? (isFirst ? 8.w : 4.w) : 1.w; // 그림자 강조
-    final double avatarRadius = isTopThree ? (isFirst ? 32.w : 28.w) : 24.w;
+    // 💡 4위 이하는 크기/스타일 축소
+    final double verticalPadding = isTopThree ? 20.h : 10.h; // Padding 축소
+    final double elevation = isTopThree ? (isFirst ? 8.w : 4.w) : 0.w; // 그림자 제거
+    final double avatarRadius = isTopThree ? (isFirst ? 32.w : 28.w) : 22.w; // 아바타 크기 축소
     final double medalSize = isTopThree ? (isFirst ? 22.w : 18.w) : 0;
-    final double fontSizeSns = isTopThree ? 18.sp : 16.sp;
+    final double fontSizeSns = isTopThree ? 18.sp : 15.sp; // 폰트 크기 축소
 
 
     return AnimatedContainer(
@@ -66,26 +66,28 @@ class WRankingListItem extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 12.h),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16.w),
+        borderRadius: BorderRadius.circular(isTopThree ? 16.w : 12.w), // 4위 이하는 모서리 반경 축소
         elevation: elevation,
-        shadowColor: isTopThree ? rankColor.withOpacity(isFirst ? 0.6 : 0.3) : Colors.black12,
-        child: GestureDetector( // InkWell 대신 GestureDetector를 사용하여 길게 누르기 이벤트를 처리합니다.
-          onLongPress: () => _copySnsId(context), // 길게 눌러 복사 기능
+        shadowColor: isTopThree ? rankColor.withOpacity(isFirst ? 0.6 : 0.3) : Colors.transparent,
+        child: GestureDetector(
+          onLongPress: () => _copySnsId(context),
           onTap: () {
             // TODO: 상세 보기 이동 로직
           },
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: verticalPadding),
             decoration: BoxDecoration(
-              // 💡 테두리 색상을 순위 색상으로 설정
+              // 💡 테두리 색상: 4위 이하는 얇은 회색 테두리
               border: isTopThree
                   ? Border.all(color: rankColor, width: 2.w)
-                  : Border.all(color: AppColor.lightGrey.withOpacity(0.3), width: 0.5.w),
-              borderRadius: BorderRadius.circular(16.w),
+                  : Border.all(color: AppColor.lightGrey.withOpacity(0.5), width: 0.5.w),
+              borderRadius: BorderRadius.circular(isTopThree ? 16.w : 12.w),
+              // 4위 이하의 경우 무작위 순서임을 강조하기 위해 배경색에 약간의 틴트 추가 (선택 사항)
+              color: isTopThree ? Colors.white : AppColor.lightGrey.withOpacity(0.1),
             ),
             child: Row(
               children: [
-                // 1. 🖼️ 프로필 사진 및 메달 오버레이 (가장 좌측에 배치)
+                // 1. 🖼️ 프로필 사진 및 메달 오버레이
                 _ProfileThumbnail(
                   entry: entry,
                   rankColor: rankColor,
@@ -95,7 +97,7 @@ class WRankingListItem extends StatelessWidget {
                 ),
                 SizedBox(width: 16.w),
 
-                // 2. 👤 SNS ID (일반 Text로 복원)
+                // 2. 👤 SNS ID
                 Expanded(
                   child: _SnsIdText(
                     snsId: entry.snsId,
@@ -104,16 +106,18 @@ class WRankingListItem extends StatelessWidget {
                   ),
                 ),
 
-                // 3. 🥇 우측 끝에 순위 나열
+                // 3. 🥇 우측 끝에 순위 나열 (4위 이하는 공백)
                 SizedBox(width: 16.w),
-                Text(
-                  _getRankOrdinal(rank),
-                  style: TextStyle(
-                    fontSize: isTopThree ? 20.sp : 16.sp,
-                    fontWeight: isTopThree ? FontWeight.w900 : FontWeight.bold,
-                    color: isTopThree ? rankColor : AppColor.darkGrey,
-                  ),
-                ),
+                if (isTopThree)
+                  Text(
+                    _getRankOrdinal(rank),
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w900,
+                      color: rankColor,
+                    ),
+                  )
+                // 4위 이하는 우측에 빈 공간을 유지하거나 다른 요소를 배치할 수 있습니다.
               ],
             ),
           ),
@@ -123,7 +127,7 @@ class WRankingListItem extends StatelessWidget {
   }
 }
 
-/// 💡 일반 Text를 사용하는 SNS ID 위젯 (복사 로직은 상위 GestureDetector에 위임)
+/// 💡 일반 Text를 사용하는 SNS ID 위젯 (SelectableText 복원)
 class _SnsIdText extends StatelessWidget {
   final String snsId;
   final double fontSize;
@@ -141,7 +145,7 @@ class _SnsIdText extends StatelessWidget {
     return Text(
       "@$snsId",
       maxLines: 1,
-      overflow: TextOverflow.ellipsis, // 텍스트 오버플로우 처리
+      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: fontSize,
         fontWeight: isTopThree ? FontWeight.w800 : FontWeight.w600,
@@ -151,7 +155,7 @@ class _SnsIdText extends StatelessWidget {
   }
 }
 
-/// 🖼️ 프로필 사진 + 메달 오버레이 위젯 (작게 분리된 StatelessWidget)
+// _ProfileThumbnail은 변경 없이 그대로 유지됩니다.
 class _ProfileThumbnail extends StatelessWidget {
   final EntryModel entry;
   final Color rankColor;

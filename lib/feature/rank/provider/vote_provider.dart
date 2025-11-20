@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:selfie_pick/feature/my_contest/provider/repo/entry_repo.dart';
+import 'package:selfie_pick/feature/my_entry/provider/repo/entry_repo.dart';
 import 'package:selfie_pick/feature/rank/provider/repo/repo_vote.dart';
 import 'model/m_voting_status.dart';
 
-import '../../my_contest/model/m_entry.dart';
+import '../../my_entry/model/m_entry.dart';
 import '../../auth/provider/auth_notifier.dart';
 import '../../../shared/provider/contest_status/contest_status_provider.dart';
 
