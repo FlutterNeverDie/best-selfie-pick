@@ -99,8 +99,11 @@ class VoteNotifier extends Notifier<VotingStatus> {
   /// 초기 데이터 로드 및 무한 스크롤 다음 페이지 로드 로직 통합
   Future<void> loadCandidates() async {
     debugPrint('지역 참가자 로드 시작...');
-    // 💡 가드 조건: isVoted이거나, 이미 로딩 중이거나, 페이지가 더 없으면 중단
-    if ( state.isLoadingNextPage || !state.hasMorePages) return;
+    // 💡  이미 로딩 중이거나, 페이지가 더 없으면 중단
+    if ( state.isLoadingNextPage || !state.hasMorePages){
+      debugPrint('로딩 중이거나 더 이상 페이지가 없습니다. 로드 중단.');
+      return;
+    }
 
     // 💡 Repository 접근에 필요한 값들을 ref.read로 가져옴
     final regionCity = _regionCity;
@@ -110,6 +113,17 @@ class VoteNotifier extends Notifier<VotingStatus> {
     state = state.copyWith(isLoadingNextPage: true);
 
     try {
+
+      // 시간을 비교해서 현재 시간과 30초 이상 차이가 안나면 로딩 중단, 리프레시 취소
+      if (state.lastFetchedTime != null) {
+        final timeSinceLastFetch = DateTime.now().difference(state.lastFetchedTime!);
+        if (timeSinceLastFetch.inSeconds < 30) {
+          debugPrint('최근에 데이터를 불러왔습니다. 리프레시를 취소합니다.');
+          state = state.copyWith(isLoadingNextPage: false);
+          return;
+        }
+      }
+
       final snapshot = await _entryRepository.fetchCandidatesForVoting(
         regionCity,
         currentWeekKey,
@@ -132,6 +146,7 @@ class VoteNotifier extends Notifier<VotingStatus> {
           lastDocument: snapshot.docs.isNotEmpty
               ? snapshot.docs.last
               : state.lastDocument,
+          lastFetchedTime: DateTime.now(),
         );
       debugPrint('지역 참가자 로드 Total: ${updatedCandidates.length}');
     } catch (e, stack) {

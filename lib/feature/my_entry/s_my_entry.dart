@@ -28,7 +28,7 @@ class MyEntryScreen extends ConsumerWidget {
   Future<bool?> _showConfirmationDialog(BuildContext context, String action) async {
     final String title = action == 'private' ? '비공개 전환 확인' : '공개 전환 확인';
     final String content = action == 'private'
-        ? '사진을 즉시 투표 대상에서 제외하고 비공개 상태로 전환합니다.'
+        ? '사진을 즉시 투표 대상에서 제외하고 비공개 상태로 전환합니다. 다시 공개로 되돌릴 수 없습니다.'
         : '사진을 다시 투표 목록에 노출하고 공개 상태로 전환합니다.';
 
     return await showDialog<bool>(
@@ -107,9 +107,9 @@ class MyEntryScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          if (entryModel != null)
+          if (entryModel != null && entryModel.status == 'approved')
             _buildStatusMenu(context, ref, entryModel), // 💡 메뉴 추가
-        ],
+        ]
       ),
       body: RefreshIndicator(
         onRefresh: () => _onRefresh(ref),
@@ -146,6 +146,8 @@ class MyEntryScreen extends ConsumerWidget {
                   return const WEntryNotEnteredView();
                 }
 
+                debugPrint('entryModel status : ${entryModel.status}');
+
                 // 💡 분리된 위젯 사용
                 switch (entryModel.status) {
                   case 'pending':
@@ -155,6 +157,7 @@ class MyEntryScreen extends ConsumerWidget {
                   case 'approved': // 투표 진행 중
                   case 'private':  // 비공개 상태
                     return WEntryApprovedView(entry: entryModel);
+                    // complted
                   default:
                     return Center(child: Text('알 수 없는 참가 상태입니다.', style: TextStyle(fontSize: 16.sp)));
                 }
