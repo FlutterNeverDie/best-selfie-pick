@@ -57,9 +57,8 @@ class VoteNotifier extends Notifier<VotingStatus> {
     try {
       await checkIfAlreadyVoted();
       // 투표 완료 상태가 아니라면 후보 로드 시작
-      if (!state.isVoted) {
-        await loadCandidates();
-      }
+      await loadCandidates();
+
     } catch (e) {
       // 초기 로드 중 발생한 오류는 상태에 반영할 수 있으나, 현재는 로그만 남깁니다.
       debugPrint('Initial data load failed: $e');
@@ -101,7 +100,7 @@ class VoteNotifier extends Notifier<VotingStatus> {
   Future<void> loadCandidates() async {
     debugPrint('지역 참가자 로드 시작...');
     // 💡 가드 조건: isVoted이거나, 이미 로딩 중이거나, 페이지가 더 없으면 중단
-    if (state.isVoted || state.isLoadingNextPage || !state.hasMorePages) return;
+    if ( state.isLoadingNextPage || !state.hasMorePages) return;
 
     // 💡 Repository 접근에 필요한 값들을 ref.read로 가져옴
     final regionCity = _regionCity;
