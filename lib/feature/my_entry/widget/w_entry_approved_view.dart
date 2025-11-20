@@ -41,7 +41,7 @@ class WEntryApprovedView extends ConsumerWidget {
           ),
           SizedBox(height: 10.h),
           Text(
-            '[${currentEntry.weekKey}] ${currentEntry.regionCity} 참가 중',
+            '[${currentEntry.weekKey}] ${currentEntry.regionCity}',
             style: TextStyle(
                 color: Colors.green,
                 fontWeight: FontWeight.w500,

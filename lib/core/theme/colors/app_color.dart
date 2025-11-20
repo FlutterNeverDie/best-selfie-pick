@@ -6,7 +6,6 @@ class AppColor {
   static const primary = Colors.pinkAccent;
   static const scaffoldBackgroundColor = Color(0xFFF8F9FB);
   static const appBarBackgroundColor = Color(0xFCF8F9FB);
-  static const bottomNavigationBackgroundColor = Color(0xFCF8F9FB);
   static const boldHintText = Color.fromARGB(255, 129, 128, 138);
   static const hintText = Color.fromARGB(255, 155, 154, 159);
 
@@ -17,6 +16,8 @@ class AppColor {
 
   // black
   static const black = Color(0xFF000000);
+  static const red = Color(0xFFDD2C00);
+  static const green = Color(0xFF00C853);
 
   // white
   static const white = Color(0xFFFFFFFF);
