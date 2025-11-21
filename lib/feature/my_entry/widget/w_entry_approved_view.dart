@@ -37,7 +37,7 @@ class WEntryApprovedView extends ConsumerWidget {
           // 3. 📊 실시간 득표 대시보드 (디자인 개선)
           _buildVoteDashboard(context, currentEntry),
 
-          SizedBox(height: 40.h),
+          SizedBox(height: 20.h),
 
           // 4. ℹ️ 하단 안내 문구
           Container(

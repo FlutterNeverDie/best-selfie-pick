@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // 💡 AdSize 사용을 위해 추가
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/feature/rank/widget/w_ranking_list_item.dart';
 import 'package:text_gradiate/text_gradiate.dart';
 
+import '../../../shared/admob/w_banner_ad.dart';
 import '../provider/vote_provider.dart';
 
 class WRankingListView extends ConsumerWidget {
@@ -47,15 +49,22 @@ class WRankingListView extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+  /*          // 💡 1. [상단 광고] 작게 (Standard Banner)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+              child: const Center(
+                child: WBannerAd(adSize: AdSize.banner), // 320x50
+              ),
+            ),*/
+
             // ----------------------------------------------------
             // Section 1: Top 3 (실시간 핫 픽)
             // ----------------------------------------------------
             Padding(
-              padding: EdgeInsets.only(top: 24.h, left: 20.w, right: 20.w, bottom: 16.h),
+              padding: EdgeInsets.only(top: 8.h, left: 20.w, right: 20.w, bottom: 16.h),
               child: Row(
                 children: [
                   TextGradiate(
-                    // 💡 수정됨: 명예의 전당 -> 실시간 핫 픽
                     text: Text(
                       '실시간 핫 픽 (Top 3)',
                       style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w900),
@@ -80,7 +89,7 @@ class WRankingListView extends ConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               itemCount: topThree.length,
-              separatorBuilder: (context, index) => SizedBox(height: 8.h), // Top 3 사이 간격 조금 더 줌
+              separatorBuilder: (context, index) => SizedBox(height: 8.h),
               itemBuilder: (context, index) {
                 return WRankingListItem(
                   key: ValueKey(topThree[index].entryId),
@@ -94,15 +103,22 @@ class WRankingListView extends ConsumerWidget {
             // Section 2: 나머지 참가자 (위클리 라인업)
             // ----------------------------------------------------
             if (challengers.isNotEmpty) ...[
-              SizedBox(height: 12.h), // 섹션 간격 확보
+
+              // 💡 2. [중간 광고] 크게 (Medium Rectangle)
+              // 섹션 구분선 역할도 하면서 시선을 확 끄는 큰 배너
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                child: const Center(
+                  child: WBannerAd(adSize: AdSize.mediumRectangle), // 300x250
+                ),
+              ),
+
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
                 child: Row(
                   children: [
-                    // 아이콘 변경: 목록/라인업 느낌의 아이콘
                     Icon(Icons.view_agenda_outlined, color: Colors.grey.shade800, size: 22.w),
                     SizedBox(width: 8.w),
-                    // 💡 수정됨: 라이징 스타 -> 위클리 라인업 (중립적이고 세련된 표현)
                     Text(
                       '위클리 라인업',
                       style: TextStyle(
@@ -121,7 +137,6 @@ class WRankingListView extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 itemCount: challengers.length,
                 itemBuilder: (context, index) {
-                  // 4위부터 시작하지만 UI에는 순위 표시 안 함 (점이나 공백 처리)
                   return WRankingListItem(
                     key: ValueKey(challengers[index].entryId),
                     entry: challengers[index],

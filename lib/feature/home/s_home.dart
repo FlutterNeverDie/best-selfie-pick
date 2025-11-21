@@ -54,28 +54,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // BottomNavigationBar를 사용하여 인덱스 변경 처리
       bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min, // 💡 중요: 내용물 크기만큼만 차지하게 설정 (안 그러면 화면 꽉 채움)
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // 1. 📺 배너 광고 영역
-          Container(
-            color: Colors.white, // 배경색 (광고 로딩 중일 때 흰색 배경 유지)
-            width: double.infinity,
-            alignment: Alignment.center,
-            // 광고 위아래로 살짝 여백을 주면 더 깔끔합니다.
-            padding: EdgeInsets.symmetric(vertical: 4.h),
-            child: const WBannerAd(),
-          ),
-
-          // 2. 구분선 (광고와 탭바 사이를 깔끔하게 분리)
-          Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
-
           // 3. 기존 탭바 (BottomNavigationBar)
           BottomNavigationBar(
             items: items
                 .map((item) => BottomNavigationBarItem(
-              icon: Icon(item['icon']),
-              label: item['label'],
-            ))
+                      icon: Icon(item['icon']),
+                      label: item['label'],
+                    ))
                 .toList(),
 
             currentIndex: pageIndex,
@@ -83,14 +71,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             selectedItemColor: AppColor.primary,
             unselectedItemColor: Colors.grey,
             type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white, // 💡 Column 내부이므로 배경색 명시 추천
-            elevation: 0, // 💡 위에 구분선(Divider)을 줬으므로 그림자는 빼는 게 더 깔끔함
+            backgroundColor: Colors.white,
+            // 💡 Column 내부이므로 배경색 명시 추천
+            elevation: 0,
+            // 💡 위에 구분선(Divider)을 줬으므로 그림자는 빼는 게 더 깔끔함
 
             // 3. 탭 클릭 시 Riverpod StateProvider의 값을 변경
             onTap: (int index) {
               // notifier를 사용하여 pageIndexProvider의 상태를 업데이트
               ref.read(pageIndexProvider.notifier).state = index;
             },
+          ),
+
+          // 1. 📺 배너 광고 영역
+          Container(
+            color: Colors.white, // 배경색 (광고 로딩 중일 때 흰색 배경 유지)
+            width: double.infinity,
+            alignment: Alignment.center,
+            // 광고 위아래로 살짝 여백을 주면 더 깔끔합니다.
+            child: const WBannerAd(),
           ),
         ],
       ),

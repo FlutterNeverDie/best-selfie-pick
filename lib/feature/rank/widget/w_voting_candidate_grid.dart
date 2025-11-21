@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart'; // AdSize 사용을 위해 추가
-import 'package:selfie_pick/core/theme/colors/app_color.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:selfie_pick/feature/rank/widget/w_candidate_item.dart';
 import '../../../shared/admob/w_banner_ad.dart';
 import '../provider/vote_provider.dart';

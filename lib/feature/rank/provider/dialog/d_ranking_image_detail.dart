@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // 💡 AdSize 사용
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 
-import '../../../../shared/service/uri_service.dart';
+import '../../../../shared/admob/w_banner_ad.dart';
+import '../../../../shared/service/uri_service.dart'; // 경로 확인 필요
 
 class RankingImageDetailDialog extends StatelessWidget {
   final EntryModel entry;
@@ -22,8 +24,8 @@ class RankingImageDetailDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent, // 배경 투명
-      insetPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h), // 화면 꽉 차지 않게 여백 줌
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -45,7 +47,7 @@ class RankingImageDetailDialog extends StatelessWidget {
 
           SizedBox(height: 10.h),
 
-          // 2. 이미지 영역 (남은 공간 차지, 버튼 안 가림)
+          // 2. 이미지 영역 (남은 공간 차지)
           Expanded(
             child: InteractiveViewer(
               panEnabled: true,
@@ -55,7 +57,7 @@ class RankingImageDetailDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16.w),
                 child: CachedNetworkImage(
                   imageUrl: entry.thumbnailUrl,
-                  fit: BoxFit.contain, // 비율 유지하며 다 보여주기
+                  fit: BoxFit.contain,
                   placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.white)),
                   errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white),
                 ),
@@ -63,22 +65,20 @@ class RankingImageDetailDialog extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 24.h),
 
-          // 3. 하단 인스타그램 버튼 (그라데이션 & 그림자)
+          // 3. 하단 인스타그램 버튼
           GestureDetector(
             onTap: _launchInstagram,
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: 14.h),
               decoration: BoxDecoration(
-                // 인스타그램 브랜드 그라데이션
                 gradient: const LinearGradient(
                   colors: [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCAF45)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
-                borderRadius: BorderRadius.circular(30.w), // 둥근 캡슐 모양
+                borderRadius: BorderRadius.circular(30.w),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
@@ -106,8 +106,14 @@ class RankingImageDetailDialog extends StatelessWidget {
             ),
           ),
 
-          // 하단 여백 (SafeArea 고려)
-          SizedBox(height: 20.h),
+          SizedBox(height: 3.h),
+
+          // 💡 4. 하단 배너 광고 추가
+          // 다이얼로그 하단에 자연스럽게 배치합니다.
+          const WBannerAd(adSize: AdSize.banner),
+
+          // 배너 아래 약간의 여백 (안전하게)
+          SizedBox(height: 10.h),
         ],
       ),
     );
