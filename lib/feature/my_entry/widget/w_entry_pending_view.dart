@@ -1,151 +1,203 @@
-// lib/feature/my_entry/widget/w_entry_pending_view.dart (수정)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
-// import 'package:selfie_pick/feature/my_entry/widget/w_entry_status_card.dart'; // 기존 카드 위젯은 사용하지 않음
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
+import '../../../shared/widget/w_cached_image.dart';
 
-import '../../../shared/widget/w_cached_image.dart'; // AppColor 사용 가정
-
-class WEntryPendingView extends ConsumerWidget {
+// 💡 애니메이션을 사용하기 위해 ConsumerStatefulWidget으로 변경
+class WEntryPendingView extends ConsumerStatefulWidget {
   final EntryModel entry;
 
   const WEntryPendingView({super.key, required this.entry});
 
-  // 복사 기능을 위한 임시 함수 (실제 구현 시 Clipboard API 사용)
-  void _copyToClipboard(BuildContext context, String text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("ID '${text}'가 클립보드에 복사되었습니다.", style: TextStyle(fontSize: 14.sp)),
-        duration: const Duration(seconds: 1),
-      ),
+  @override
+  ConsumerState<WEntryPendingView> createState() => _WEntryPendingViewState();
+}
+
+// 💡 SingleTickerProviderStateMixin 추가 (애니메이션 필수)
+class _WEntryPendingViewState extends ConsumerState<WEntryPendingView> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    // 1. 컨트롤러 설정 (2.5초 동안 1바퀴)
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2500),
+      vsync: this,
+    )..repeat(); // 무한 반복
+
+    // 2. 곡선 애니메이션 설정 (자연스러운 가속/감속)
+    // Curves.easeInOutCubic: 천천히 시작 -> 중간에 빠름 -> 천천히 끝남 (쓱~ 도는 느낌)
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
     );
-    // 실제 복사 로직: Clipboard.setData(ClipboardData(text: text));
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Scaffold를 포함하는 Screen이 아니므로 Padding과 Center를 사용
-    return SingleChildScrollView(
+  void dispose() {
+    _controller.dispose(); // 메모리 누수 방지
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
-      child: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-
-            // 1. 상태 배지 (Status Badge - 세련된 알림 스타일)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1), // 은은한 배경색
-                borderRadius: BorderRadius.circular(10.w),
-                border: Border.all(color: Colors.orange.shade300, width: 1.w),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.access_time_filled, color: Colors.orange.shade600, size: 24.w),
-                  SizedBox(width: 10.w),
-                  Text(
-                    '승인 검토 대기 중',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange.shade700,
-                    ),
-                  ),
-                ],
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 1. 🖼️ 사진 위에 텍스트가 올라간 카드
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.w),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            SizedBox(height: 30.h),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20.w),
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Layer 1: 배경 이미지
+                    WCachedImage(
+                      imageUrl: widget.entry.photoUrl, // widget.entry로 접근
+                      fit: BoxFit.cover,
+                    ),
 
-            // 2. 등록된 사진 (Aspect Ratio를 사용하여 레이아웃 안정화)
-            AspectRatio(
-              aspectRatio: 1 / 1.2,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.w),
-                child: WCachedImage( // 💡 WCachedImage 사용
-                  imageUrl: entry.photoUrl,
-                  // width, height는 AspectRatio가 제어하므로 명시 불필요
-                  fit: BoxFit.cover,
+                    // Layer 2: 어두운 오버레이
+                    Container(
+                      color: Colors.black.withOpacity(0.5),
+                    ),
+
+                    // Layer 3: 상태 아이콘 및 안내 텍스트
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // 💡 아이콘 배경 (핑크색)
+                            Container(
+                              padding: EdgeInsets.all(16.w),
+                              decoration: BoxDecoration(
+                                color: Colors.pink.withOpacity(0.2), // 배경 핑크
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.pinkAccent.withOpacity(0.5), width: 1.w),
+                              ),
+                              // 💡 아이콘 회전 애니메이션 적용
+                              child: RotationTransition(
+                                turns: _animation, // 위에서 정의한 곡선 애니메이션 연결
+                                child: Icon(
+                                  Icons.hourglass_top_rounded,
+                                  size: 40.w,
+                                  color: Colors.white, // 아이콘 흰색
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 20.h),
+
+                            // 제목 텍스트
+                            Text(
+                              '꼼꼼히 확인하고 있어요! 🧐',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 22.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    offset: const Offset(0, 2),
+                                    blurRadius: 4.0,
+                                    color: Colors.black.withOpacity(0.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 12.h),
+
+                            // 설명 텍스트
+                            Text(
+                              '관리자 승인이 완료되면 투표 리스트에 공개됩니다.\n(보통 24시간 이내에 완료돼요)',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.white.withOpacity(0.9),
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            SizedBox(height: 30.h),
+          ),
 
-            // 3. 등록 정보 카드 (SNS ID 강조)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: AppColor.white, // 흰색 배경
-                borderRadius: BorderRadius.circular(16.w),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 등록 지역 및 회차 정보
-                  Text(
-                    '${entry.regionCity} | ${entry.weekKey} 참가',
-                    style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
-                  ),
-                  SizedBox(height: 15.h),
+          SizedBox(height: 32.h),
 
-                  // SNS ID (인스타/무신사 스타일 강조)
-                  Text(
-                    '홍보 계정 ID',
-                    style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 5.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                    decoration: BoxDecoration(
-                      color: AppColor.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8.w),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '@${entry.snsId}',
-                          style: TextStyle(
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.bold,
-                            color: AppColor.primary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-
-                  // 최종 메시지 및 안내
-                  Text(
-                    '안내 사항',
-                    style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 5.h),
-                  Text(
-                    '등록된 사진은 관리자의 검토(일반적으로 24시간 이내)를 거칩니다. 승인되면 자동으로 현재 진행 중인 ${entry.weekKey} 투표 대상에 추가됩니다.',
-                    style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700, height: 1.4),
-                  ),
-                ],
-              ),
+          // 2. 📝 제출 정보 요약 박스
+          Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(16.w),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-          ],
-        ),
+            child: Column(
+              children: [
+                _buildInfoRow(Icons.calendar_today_rounded, '참가 회차', '${widget.entry.weekKey}차'),
+                Padding( 
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  child: Divider(color: Colors.grey[300], height: 1),
+                ),
+                _buildInfoRow(Icons.location_on_rounded, '참가 지역', widget.entry.regionCity),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  child: Divider(color: Colors.grey[300], height: 1),
+                ),
+                _buildInfoRow(Icons.alternate_email_rounded, '홍보 ID', '@${widget.entry.snsId}', isHighlight: true),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  // 정보 행 빌더
+  Widget _buildInfoRow(IconData icon, String label, String value, {bool isHighlight = false}) {
+    return Row(
+      children: [
+        Icon(icon, size: 18.w, color: Colors.grey[600]),
+        SizedBox(width: 8.w),
+        Text(
+          label,
+          style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 15.sp,
+            fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
+            color: isHighlight ? AppColor.primary : Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 }
