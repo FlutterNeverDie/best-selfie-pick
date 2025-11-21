@@ -8,6 +8,7 @@ import '../../../shared/admob/w_banner_ad.dart';
 import '../provider/vote_provider.dart';
 
 const double _bottomPadding = 140.0;
+/// 그리드 내 광고 삽입 빈도
 const int _adFrequency = 4; // 4개마다 광고 1개
 
 class WVotingCandidateGrid extends ConsumerWidget {

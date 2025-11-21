@@ -6,6 +6,7 @@ import 'package:selfie_pick/core/theme/colors/app_color.dart';
 import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 
 import '../../../core/data/area.data.dart';
+import '../../../shared/service/ad_service.dart';
 
 class RegionChangeDialog extends ConsumerStatefulWidget {
   const RegionChangeDialog({super.key});
@@ -17,23 +18,45 @@ class RegionChangeDialog extends ConsumerStatefulWidget {
 class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
   String? _selectedRegion;
   bool _isUpdating = false;
+  bool _isAdLoading = true;
+
+  final AdmobService _adService = AdmobService();
 
   @override
   void initState() {
     super.initState();
-    // 현재 설정된 지역을 초기 선택값으로
     final currentUser = ref.read(authProvider).user;
     if (currentUser != null && currentUser.region != 'NotSet') {
       _selectedRegion = currentUser.region;
     }
+
+    // 💡 [수정] 30초 리워드 대신 '스킵 가능한 리워드 전면 광고' 로드
+    _adService.loadRewardedInterstitialAd(
+        onAdLoaded: () {
+          if (mounted) {
+            setState(() {
+              _isAdLoading = false;
+            });
+          }
+        },
+        onAdFailedToLoad: (error) {
+          if (mounted) {
+            setState(() {
+              _isAdLoading = false;
+            });
+          }
+        }
+    );
+  }
+
+  @override
+  void dispose() {
+    _adService.dispose();
+    super.dispose();
   }
 
   Future<void> _confirmChange() async {
     if (_selectedRegion == null) return;
-
-    // -------------------------------------------------------
-    // TODO: 여기에 나중에 보상형 광고 로직 추가
-    // -------------------------------------------------------
 
     setState(() => _isUpdating = true);
 
@@ -41,7 +64,7 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
       await ref.read(authProvider.notifier).updateRegion(_selectedRegion!);
 
       if (mounted) {
-        context.pop(); // 다이얼로그 닫기
+        context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('지역이 $_selectedRegion(으)로 변경되었습니다.')),
         );
@@ -57,6 +80,23 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
     }
   }
 
+  void _onConfirmPressed() {
+    if (_selectedRegion == null) return;
+
+    // 💡 [수정] showRewardedAd -> showRewardedInterstitialAd 사용
+    _adService.showRewardedInterstitialAd(
+        onRewardEarned: () {
+          _confirmChange();
+        },
+        onAdFailed: () {
+          _confirmChange();
+        },
+        onAdDismissed: () {
+          debugPrint('광고 닫힘 (변경 취소)');
+        }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -67,23 +107,21 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
       child: Padding(
         padding: EdgeInsets.all(20.w),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // 내용물만큼만 높이 차지
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 1. 타이틀
             Text(
               '활동 지역 변경',
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.h),
             Text(
-              '변경 시 각 탭을 새로고침 해주세요.',
+              '변경 시 5초 내외의 광고가 재생됩니다.',
               style: TextStyle(fontSize: 13.sp, color: Colors.grey),
             ),
             SizedBox(height: 20.h),
 
-            // 2. 지역 그리드 (높이 제한)
             SizedBox(
-              height: 300.h, // 다이얼로그가 너무 길어지지 않게 고정 높이 사용
+              height: 300.h,
               child: GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
@@ -128,7 +166,6 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
 
             SizedBox(height: 24.h),
 
-            // 3. 버튼 영역
             Row(
               children: [
                 Expanded(
@@ -144,9 +181,9 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
                 SizedBox(width: 12.w),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: (_isUpdating || _selectedRegion == null)
+                    onPressed: (_isUpdating || _isAdLoading || _selectedRegion == null)
                         ? null
-                        : _confirmChange,
+                        : _onConfirmPressed,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.primary,
                       foregroundColor: Colors.white,
@@ -155,7 +192,13 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
                     ),
                     child: _isUpdating
                         ? SizedBox(width: 20.w, height: 20.w, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('변경 완료', style: TextStyle(fontWeight: FontWeight.bold)),
+                        : _isAdLoading
+                        ? SizedBox(
+                      height: 20.w,
+                      width: 20.w,
+                      child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                        : const Text('지역 변경', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

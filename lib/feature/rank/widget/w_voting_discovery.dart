@@ -35,7 +35,7 @@ class WVotingDiscovery extends ConsumerWidget {
               Icon(Icons.location_on, size: 20.w, color: AppColor.primary),
               SizedBox(width: 6.w),
               Text(
-                '$currentUserRegion',
+                currentUserRegion,
                 style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               Text(

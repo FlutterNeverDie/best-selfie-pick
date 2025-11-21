@@ -306,6 +306,12 @@ class AuthNotifier extends Notifier<AuthState> {
     // 로딩 시작 (UI에서 로딩 인디케이터를 띄우고 싶다면)
     state = state.copyWith(isLoading: true, error: null);
 
+    // 이미 같은 지역이면 업데이트할 필요 없음
+    if (currentUser.region == newRegion) {
+      state = state.copyWith(isLoading: false);
+      return;
+    }
+
     try {
       // 1. Repository를 통해 DB 업데이트
       await _repository.updateUserRegion(currentUser.uid, newRegion);
