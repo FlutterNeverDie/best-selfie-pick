@@ -1,12 +1,8 @@
-// lib/feature/my_entry/widget/w_entry_rejected_view.dart (수정)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
-import 'package:selfie_pick/core/theme/colors/app_color.dart';
-
 import '../../../shared/widget/w_cached_image.dart';
 
 class WEntryRejectedView extends ConsumerWidget {
@@ -16,144 +12,148 @@ class WEntryRejectedView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 반려 사유는 rejectionReason 필드를 사용하며, 없을 경우 기본 메시지 사용
-    final String reason = '반려 사유: 운영 정책 위반 및 사진 규격 미달';
-    final Color rejectColor = Colors.red.shade600;
-
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
-          child: Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-
-                // 1. 상태 배지 (Rejection Badge - 경고 강조)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
-                  decoration: BoxDecoration(
-                    color: rejectColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10.w),
-                    border: Border.all(color: rejectColor, width: 1.w),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.warning_amber_rounded, color: rejectColor, size: 24.w),
-                      SizedBox(width: 10.w),
-                      Text(
-                        '등록 반려됨',
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                          color: rejectColor,
-                        ),
-                      ),
-                    ],
-                  ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. 🖼️ 반려된 사진 카드 (흑백 + 도장)
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.w),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
-                SizedBox(height: 30.h),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20.w),
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Layer 1: 배경 이미지 (흑백 처리)
+                    ColorFiltered(
+                      colorFilter: const ColorFilter.mode(
+                        Colors.grey,
+                        BlendMode.saturation, // 채도 0
+                      ),
+                      child: WCachedImage(
+                        imageUrl: entry.photoUrl,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
 
-                // 2. 반려된 사진 표시 (WEntryPendingView와 동일한 세련된 카드 형태 유지)
-                AspectRatio(
-                  aspectRatio: 1 / 1.2,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16.w),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        WCachedImage(
-                          imageUrl: entry.photoUrl,
-                          fit: BoxFit.cover,
-                          overlayColor: Colors.black.withOpacity(0.3),
-                          overlayBlendMode: BlendMode.darken,
+                    // Layer 2: 어두운 오버레이 (도장이 더 잘 보이게)
+                    Container(
+                      color: Colors.black.withOpacity(0.5),
+                    ),
+
+                    // Layer 3: 💡 요청하신 "REJECTED" 도장 유지
+                    Center(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.redAccent.withOpacity(0.8), width: 4.w),
+                          borderRadius: BorderRadius.circular(12.w),
+                          color: Colors.white.withOpacity(0.1), // 살짝 반투명
                         ),
-                        Center(
-                          child: Icon(
-                            Icons.error_outline,
-                            size: 80.w,
-                            color: Colors.white.withOpacity(0.9),
+                        // 도장처럼 살짝 기울이기 (-12도)
+                        transform: Matrix4.rotationZ(-0.2),
+                        child: Text(
+                          'REJECTED',
+                          style: TextStyle(
+                            fontSize: 32.sp,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.redAccent.withOpacity(0.9),
+                            letterSpacing: 4.0,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                SizedBox(height: 30.h),
-
-                // 3. 반려 사유 및 안내 카드
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(20.w),
-                  decoration: BoxDecoration(
-                    color: AppColor.white,
-                    borderRadius: BorderRadius.circular(16.w),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        spreadRadius: 1,
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '반려 안내',
-                        style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w700, color: rejectColor),
-                      ),
-                      SizedBox(height: 5.h),
-                      Text(
-                        reason,
-                        style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade800, height: 1.4),
-                      ),
-                      SizedBox(height: 15.h),
-                      Text(
-                        '재신청은 새로운 사진을 등록하여 진행할 수 있습니다. 운영 정책을 다시 한 번 확인해 주세요.',
-                        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-                // 하단 버튼 공간 확보를 위한 Padding
-                SizedBox(height: 100.h),
-              ],
-            ),
-          ),
-        ),
-
-        // 4. 하단 고정 CTA 버튼 (Fixed CTA)
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: EdgeInsets.fromLTRB(20.w, 15.h, 20.w, MediaQuery.of(context).padding.bottom + 15.h),
-            decoration: BoxDecoration(
-              color: AppColor.white,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2)),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                // 재신청 경로로 이동
-                context.go('/home/submit_entry');
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 55.h),
-                backgroundColor: rejectColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.w)),
               ),
-              child: Text('새로운 사진으로 재신청하기', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
             ),
           ),
-        ),
-      ],
+
+          SizedBox(height: 32.h),
+
+          // 2. 📝 반려 사유 박스
+          Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50, // 붉은 배경
+              borderRadius: BorderRadius.circular(16.w),
+              border: Border.all(color: Colors.red.shade100),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, size: 20.w, color: Colors.red.shade700),
+                    SizedBox(width: 8.w),
+                    Text(
+                      '승인이 거절되었어요 😢',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+
+                // 사유 하드코딩 및 안내
+                Text(
+                  '사유: 운영 정책 위반 및 사진 규격 미달\n\n아쉽지만 이번 사진은 함께할 수 없게 되었어요. 위 사유를 확인하고 다시 도전해주세요!',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.black87,
+                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 32.h),
+
+          // 3. 재신청 버튼
+          ElevatedButton(
+            onPressed: () {
+              context.go('/home/submit_entry');
+            },
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity, 54.h),
+              backgroundColor: Colors.black87,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.w)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.refresh_rounded, color: Colors.white),
+                SizedBox(width: 8.w),
+                Text(
+                  '새로운 사진으로 재신청하기',
+                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 20.h), // 하단 여백
+        ],
+      ),
     );
   }
 }

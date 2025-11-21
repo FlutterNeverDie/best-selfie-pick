@@ -160,7 +160,7 @@ class _WEntryPendingViewState extends ConsumerState<WEntryPendingView> with Sing
             child: Column(
               children: [
                 _buildInfoRow(Icons.calendar_today_rounded, '참가 회차', '${widget.entry.weekKey}차'),
-                Padding( 
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                   child: Divider(color: Colors.grey[300], height: 1),
                 ),
