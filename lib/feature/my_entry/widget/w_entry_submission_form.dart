@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-// 💡 외부 위젯 Import
+// 💡 분리된 위젯들 Import (경로 확인 필요)
 import '../../../shared/widget/w_dashed_border_painter.dart';
 import '../../../shared/widget/w_loading_overlay.dart';
 
@@ -24,10 +24,11 @@ class WEntrySubmissionForm extends ConsumerStatefulWidget {
 
 class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
   final TextEditingController _snsController = TextEditingController();
+  final TextEditingController _urlController = TextEditingController();
   File? _selectedImage;
   bool _isAgreed = false;
 
-  // 💡 로컬 로딩 상태 (버튼 비활성화용)
+  // 로컬 로딩 상태 (버튼 비활성화용)
   bool _isLocalLoading = false;
   List<String> _bannedWords = [];
 
@@ -40,6 +41,7 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
   @override
   void dispose() {
     _snsController.dispose();
+    _urlController.dispose();
     super.dispose();
   }
 
@@ -69,9 +71,11 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     return false;
   }
 
+  // 💡 [수정] URL도 필수로 체크
   bool _canSubmit() =>
       _selectedImage != null &&
           _snsController.text.trim().isNotEmpty &&
+          _urlController.text.trim().isNotEmpty && // URL 필수
           _isAgreed &&
           !_isLocalLoading;
 
@@ -86,26 +90,25 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     }
   }
 
-  // 💡 [핵심 수정] Stack 대신 showDialog 사용
+  // 💡 [핵심] showDialog로 로딩 처리 (Stack 에러 해결)
   Future<void> _submitEntry() async {
     if (!_canSubmit()) return;
 
-    if (_hasProfanity(_snsController.text)) {
+    if (_hasProfanity(_snsController.text) || _hasProfanity(_urlController.text)) {
       _showSnackbar('부적절하거나 사용할 수 없는 단어가 포함되어 있습니다.');
       return;
     }
 
-    // 1. 키보드 내리기 (충돌 방지)
+    // 1. 키보드 내리기 (필수)
     FocusScope.of(context).unfocus();
 
     setState(() {
       _isLocalLoading = true;
     });
 
-    // 2. 💡 로딩 다이얼로그 띄우기 (UI 충돌 없는 안전한 방식)
+    // 2. 로딩 다이얼로그 띄우기
     showDialog(
       context: context,
-      routeSettings: const RouteSettings(name: 'EntrySubmissionLoadingDialog'),
       barrierDismissible: false, // 터치로 닫기 방지
       builder: (context) => const PopScope(
         canPop: false, // 뒤로가기 방지
@@ -118,21 +121,22 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
       await ref.read(entryProvider.notifier).submitNewEntry(
         photo: _selectedImage!,
         snsId: _snsController.text.trim(),
+        snsUrl: _urlController.text.trim(), // URL 전달
       );
 
-      // 4. 성공 시 로직
+      // 4. 성공 시
       if (mounted) {
-        Navigator.pop(context); // 로딩 다이얼로그 닫기
+        Navigator.pop(context); // 로딩창 닫기
         _showSnackbar('참가 신청이 완료되었습니다! 승인을 기다려주세요.');
         context.go('/home?tab=my_entry');
       }
     } catch (e) {
-      // 5. 실패 시 로직
+      // 5. 실패 시
       if (mounted) {
-        Navigator.pop(context); // 로딩 다이얼로그 닫기
+        Navigator.pop(context); // 로딩창 닫기
         _showSnackbar('신청 실패: ${e.toString().replaceAll('Exception: ', '')}');
         setState(() {
-          _isLocalLoading = false;
+          _isLocalLoading = false; // 버튼 다시 활성화
         });
       }
     }
@@ -160,8 +164,8 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
       return _buildRegionNotSetView(context);
     }
 
-    // 💡 [핵심 수정] Stack 제거하고 바로 SingleChildScrollView 반환
-    // 이렇게 하면 키보드가 움직일 때 parentDataDirty 에러가 발생할 구조적 원인이 사라집니다.
+    // 💡 [핵심 수정] Stack 제거 -> SingleChildScrollView만 반환
+    // 이제 키보드가 움직여도 parentDataDirty 에러가 나지 않습니다.
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
       child: Column(
@@ -213,7 +217,7 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     );
   }
 
-  // --- 하위 빌더 함수들 ---
+  // --- 하위 위젯 빌더 ---
 
   Widget _buildPhotoSelector() {
     return GestureDetector(
@@ -274,7 +278,7 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('홍보용 SNS ID', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black87)),
+        Text('홍보용 SNS ID (필수)', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black87)),
         SizedBox(height: 8.h),
         TextFormField(
           maxLength: 50,
@@ -298,6 +302,27 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: Colors.grey.shade300)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: AppColor.primary, width: 1.5)),
             errorStyle: TextStyle(color: Colors.redAccent, fontSize: 12.sp),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          ),
+          style: TextStyle(fontSize: 16.sp),
+        ),
+
+        // 💡 URL 입력 필드 (필수)
+        Text('홍보용 프로필 링크 (필수)', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black87)),
+        SizedBox(height: 8.h),
+        TextFormField(
+          controller: _urlController,
+          enabled: !_isLocalLoading,
+          keyboardType: TextInputType.url,
+          onChanged: (value) => setState(() {}), // 입력 시 버튼 상태 업데이트
+          decoration: InputDecoration(
+            hintText: 'https://instagram.com/my_id',
+            prefixIcon: const Icon(Icons.link, color: Colors.grey),
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: AppColor.primary, width: 1.5)),
             contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
           ),
           style: TextStyle(fontSize: 16.sp),

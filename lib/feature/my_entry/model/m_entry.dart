@@ -10,6 +10,7 @@ class EntryModel {
   final String photoUrl;
   final String thumbnailUrl;
   final String snsId;
+  final String snsUrl;
   final DateTime createdAt;
 
   // 상태 및 결과
@@ -27,6 +28,7 @@ class EntryModel {
     required this.photoUrl,
     required this.thumbnailUrl,
     required this.snsId,
+    this.snsUrl = '',
     required this.createdAt,
     this.status = 'pending',
     this.goldVotes = 0,
@@ -45,6 +47,7 @@ class EntryModel {
       photoUrl: map['photoUrl'] as String? ?? '',
       thumbnailUrl: map['thumbnailUrl'] as String? ?? '',
       snsId: map['snsId'] as String? ?? '',
+      snsUrl: map['snsUrl'] as String? ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       status: map['status'] as String? ?? 'pending',
       goldVotes: (map['goldVotes'] as num?)?.toInt() ?? 0,
@@ -63,6 +66,7 @@ class EntryModel {
       'photoUrl': photoUrl,
       'thumbnailUrl': thumbnailUrl,
       'snsId': snsId,
+      'snsUrl': snsUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'status': status,
       'goldVotes': goldVotes,
@@ -81,6 +85,7 @@ class EntryModel {
     String? photoUrl,
     String? thumbnailUrl,
     String? snsId,
+    String? snsUrl,
     DateTime? createdAt,
     String? status,
     int? goldVotes,
@@ -96,6 +101,7 @@ class EntryModel {
       photoUrl: photoUrl ?? this.photoUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       snsId: snsId ?? this.snsId,
+      snsUrl: snsUrl ?? this.snsUrl,
       createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
       goldVotes: goldVotes ?? this.goldVotes,

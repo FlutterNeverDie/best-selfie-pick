@@ -140,6 +140,7 @@ class EntryRepository {
     required String photoUrl,
     required String thumbnailUrl,
     required String snsId,
+    required String snsUrl,
   }) async {
     const methodName = 'EntryRepository.참가데이터_저장(saveEntry)'; // 디버깅용 한글 메소드명
     final now = DateTime.now();
@@ -153,6 +154,7 @@ class EntryRepository {
       photoUrl: photoUrl,
       thumbnailUrl: thumbnailUrl,
       snsId: snsId,
+      snsUrl: snsUrl,
       weekKey: currentWeekKey,
       status: 'pending',
       // 관리자 승인 대기 상태로 저장

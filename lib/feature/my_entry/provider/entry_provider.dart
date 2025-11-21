@@ -54,6 +54,7 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
   Future<void> submitNewEntry({
     required File photo,
     required String snsId,
+    required String snsUrl,
   }) async {
     const methodName = 'EntryNotifier.참가신청_제출(submitNewEntry)'; // 디버깅용 한글 메소드명
 
@@ -109,6 +110,7 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
         photoUrl: photoUrls['photoUrl']!,
         thumbnailUrl: photoUrls['thumbnailUrl']!,
         snsId: snsId,
+        snsUrl: snsUrl,
       );
 
       debugPrint(

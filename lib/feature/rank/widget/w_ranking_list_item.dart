@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shimmer/shimmer.dart'; // 📦 Shimmer 패키지 import
+import 'package:shimmer/shimmer.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 
+import '../../../shared/service/uri_service.dart';
 class WRankingListItem extends StatelessWidget {
   final EntryModel entry;
   final int rank;
@@ -17,30 +18,23 @@ class WRankingListItem extends StatelessWidget {
   });
 
   Color _getRankColor() {
-    // 1~3위 순위 색상 정의
-    if (rank == 1) return const Color(0xFFFFD700);
-    if (rank == 2) return const Color(0xFFC0C0C0);
-    if (rank == 3) return const Color(0xFFCD7F32);
-    // 4위 이하의 경우, 디자인 요소로 사용되는 색상이 없으므로 투명하게 설정합니다.
-    return Colors.transparent;
+    switch (rank) {
+      case 1: return const Color(0xFFFFD700); // Gold
+      case 2: return const Color(0xFFC0C0C0); // Silver
+      case 3: return const Color(0xFFCD7F32); // Bronze
+      default: return Colors.transparent;
+    }
   }
 
   bool get isTopThree => rank <= 3;
 
-  String _getRankOrdinal(int rank) {
-    if (rank == 1) return '1st';
-    if (rank == 2) return '2nd';
-    if (rank == 3) return '3rd';
-    return ''; // 4위 이하에서는 순위를 반환하지 않습니다.
-  }
-
-  // 커스텀 복사 로직
   void _copySnsId(BuildContext context) {
     Clipboard.setData(ClipboardData(text: '@${entry.snsId}')).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('@${entry.snsId} 복사 완료!'),
+          content: Text('@${entry.snsId} 복사 완료!', style: TextStyle(fontSize: 14.sp)),
           duration: const Duration(milliseconds: 1000),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     });
@@ -49,195 +43,125 @@ class WRankingListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rankColor = _getRankColor();
-    final isFirst = rank == 1;
 
-    // 💡 4위 이하는 크기/스타일 축소
-    final double verticalPadding = isTopThree ? 20.h : 10.h; // Padding 축소
-    final double elevation = isTopThree ? (isFirst ? 8.w : 4.w) : 0.w; // 그림자 제거
-    final double avatarRadius = isTopThree ? (isFirst ? 32.w : 28.w) : 22.w; // 아바타 크기 축소
-    final double medalSize = isTopThree ? (isFirst ? 22.w : 18.w) : 0;
-    final double fontSizeSns = isTopThree ? 18.sp : 15.sp; // 폰트 크기 축소
+    final double verticalPadding = isTopThree ? 16.h : 12.h;
+    final double avatarSize = isTopThree ? 56.w : 44.w;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+    return Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      child: Material(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isTopThree ? 16.w : 12.w), // 4위 이하는 모서리 반경 축소
-        elevation: elevation,
-        shadowColor: isTopThree ? rankColor.withOpacity(isFirst ? 0.6 : 0.3) : Colors.transparent,
-        child: GestureDetector(
+        borderRadius: BorderRadius.circular(16.w),
+        boxShadow: [
+          BoxShadow(
+            color: isTopThree ? rankColor.withOpacity(0.15) : Colors.black.withOpacity(0.05),
+            blurRadius: isTopThree ? 10 : 6,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: isTopThree
+            ? Border.all(color: rankColor.withOpacity(0.5), width: 1.5.w)
+            : Border.all(color: Colors.grey.shade100),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16.w),
+          // 롱프레스 시: ID 복사
           onLongPress: () => _copySnsId(context),
+          // 💡 [수정됨] 탭 시: SNS URL로 이동
           onTap: () {
-            // TODO: 상세 보기 이동 로직
+            // snsUrl이 비어있으면 아무 동작 안 하거나 토스트 메시지를 띄울 수도 있습니다.
+            // UrlLauncherUtil 내부에서 null 체크를 하므로 바로 호출해도 안전합니다.
+            if (entry.snsUrl.isNotEmpty) {
+              UrlLauncherUtil.launch(entry.snsUrl);
+            } else {
+              // (선택 사항) URL이 없을 경우 안내 메시지
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('등록된 링크가 없습니다.', style: TextStyle(fontSize: 14.sp)),
+                  duration: const Duration(seconds: 1),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
           },
-          child: Container(
+          child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: verticalPadding),
-            decoration: BoxDecoration(
-              // 💡 테두리 색상: 4위 이하는 얇은 회색 테두리
-              border: isTopThree
-                  ? Border.all(color: rankColor, width: 2.w)
-                  : Border.all(color: AppColor.lightGrey.withOpacity(0.5), width: 0.5.w),
-              borderRadius: BorderRadius.circular(isTopThree ? 16.w : 12.w),
-              // 4위 이하의 경우 무작위 순서임을 강조하기 위해 배경색에 약간의 틴트 추가 (선택 사항)
-              color: isTopThree ? Colors.white : AppColor.lightGrey.withOpacity(0.1),
-            ),
             child: Row(
               children: [
-                // 1. 🖼️ 프로필 사진 및 메달 오버레이
-                _ProfileThumbnail(
-                  entry: entry,
-                  rankColor: rankColor,
-                  isTopThree: isTopThree,
-                  avatarRadius: avatarRadius,
-                  medalSize: medalSize,
+                // 1. 순위 표시
+                SizedBox(
+                  width: 30.w,
+                  child: Center(
+                    child: isTopThree
+                        ? Icon(Icons.emoji_events, color: rankColor, size: 28.w)
+                        : Icon(Icons.circle, color: Colors.grey.shade300, size: 6.w),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+
+                // 2. 프로필 사진
+                Container(
+                  width: avatarSize,
+                  height: avatarSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isTopThree ? rankColor : Colors.grey.shade200,
+                      width: isTopThree ? 2.w : 1.w,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: entry.thumbnailUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                      imageUrl: entry.thumbnailUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(color: Colors.grey[100]),
+                      errorWidget: (context, url, error) => const Icon(Icons.person),
+                    )
+                        : Icon(Icons.person, color: Colors.grey.shade400),
+                  ),
                 ),
                 SizedBox(width: 16.w),
 
-                // 2. 👤 SNS ID (Shimmer 적용됨)
+                // 3. SNS ID (Shimmer 효과)
                 Expanded(
-                  child: _SnsIdText(
-                    snsId: entry.snsId,
-                    fontSize: fontSizeSns,
-                    isTopThree: isTopThree,
+                  child: isTopThree
+                      ? Shimmer.fromColors(
+                    baseColor: Colors.black87,
+                    highlightColor: rankColor,
+                    period: const Duration(seconds: 2),
+                    child: Text(
+                      '@${entry.snsId}',
+                      style: TextStyle(
+                        fontSize: 17.sp,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                      : Text(
+                    '@${entry.snsId}',
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
 
-                // 3. 🥇 우측 끝에 순위 나열 (4위 이하는 공백)
-                SizedBox(width: 16.w),
-                if (isTopThree)
-                  Text(
-                    _getRankOrdinal(rank),
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w900,
-                      color: rankColor,
-                    ),
-                  )
-                // 4위 이하는 우측에 빈 공간을 유지하거나 다른 요소를 배치할 수 있습니다.
+                // 4. 우측 화살표
+                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade300, size: 24.w),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-/// 💡 Shimmer 효과를 조건부로 적용한 SNS ID 위젯
-class _SnsIdText extends StatelessWidget {
-  final String snsId;
-  final double fontSize;
-  final bool isTopThree;
-
-  const _SnsIdText({
-    super.key,
-    required this.snsId,
-    required this.fontSize,
-    required this.isTopThree,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // 1. 기본 텍스트 위젯 생성 (DRY 원칙)
-    final textWidget = Text(
-      "@$snsId",
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: isTopThree ? FontWeight.w800 : FontWeight.w600,
-        color: Colors.black87,
-      ),
-    );
-
-    // 2. 1~3위(Top 3)일 경우 Shimmer 감싸기
-    if (isTopThree) {
-      return Shimmer.fromColors(
-        // 텍스트가 검정색이므로, 하이라이트를 옅은 회색/흰색 계열로 주어 빛나는 금속 느낌을 냄
-        baseColor: Colors.black87,
-        highlightColor: Colors.grey.shade400,
-        period: const Duration(milliseconds: 2000), // 2초 주기로 반복
-        child: textWidget,
-      );
-    }
-
-    // 3. 그 외(4위 이하)는 일반 텍스트 반환
-    return textWidget;
-  }
-}
-
-// _ProfileThumbnail은 변경 없이 그대로 유지
-class _ProfileThumbnail extends StatelessWidget {
-  final EntryModel entry;
-  final Color rankColor;
-  final bool isTopThree;
-  final double avatarRadius;
-  final double medalSize;
-
-  const _ProfileThumbnail({
-    required this.entry,
-    required this.rankColor,
-    required this.isTopThree,
-    required this.avatarRadius,
-    required this.medalSize,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // 링 스타일 (1~3위만)
-        Container(
-          padding: isTopThree ? EdgeInsets.all(2.w) : EdgeInsets.zero,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: isTopThree
-                ? Border.all(color: rankColor.withOpacity(0.8), width: 2.w)
-                : null,
-            boxShadow: isTopThree
-                ? [BoxShadow(color: rankColor.withOpacity(0.4), blurRadius: 8.w)]
-                : null,
-          ),
-          child: CircleAvatar(
-            radius: avatarRadius,
-            backgroundColor: AppColor.lightGrey,
-            backgroundImage: entry.thumbnailUrl.isNotEmpty
-                ? CachedNetworkImageProvider(entry.thumbnailUrl)
-                : null,
-            child: entry.thumbnailUrl.isEmpty
-                ? Icon(Icons.person, color: Colors.white, size: avatarRadius)
-                : null,
-          ),
-        ),
-
-        if (isTopThree)
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.all(2.w),
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 2.w,
-                        offset: Offset(0, 1.w)
-                    ),
-                  ]
-              ),
-              child: Icon(
-                Icons.emoji_events,
-                color: rankColor,
-                size: medalSize,
-              ),
-            ),
-          ),
-      ],
     );
   }
 }
