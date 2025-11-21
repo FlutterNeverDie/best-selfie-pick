@@ -2,148 +2,224 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart'; // 💡 AuthProvider Import
+import 'package:shimmer/shimmer.dart'; // 📦 Shimmer 패키지
+import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/shared/provider/contest_status/model/m_contest_status.dart';
 
 import '../../../core/theme/colors/app_color.dart';
 import '../../../shared/provider/contest_status/contest_status_provider.dart';
 import '../s_entry_submission_screen.dart';
 
-class WEntryNotEnteredView extends ConsumerWidget {
+// 💡 애니메이션을 위해 StatefulWidget으로 변경
+class WEntryNotEnteredView extends ConsumerStatefulWidget {
   const WEntryNotEnteredView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 1. 상태 감시
-    final ContestStatusModel contestStatus = ref.watch(contestStatusProvider);
+  ConsumerState<WEntryNotEnteredView> createState() => _WEntryNotEnteredViewState();
+}
 
-    // 💡 2. 사용자 정보 가져오기 (지역 확인용)
+class _WEntryNotEnteredViewState extends ConsumerState<WEntryNotEnteredView> with TickerProviderStateMixin {
+  // 🔄 로고 회전 애니메이션
+  late final AnimationController _rotationController;
+
+  // 💓 버튼 두근두근(Pulse) 애니메이션
+  late final AnimationController _pulseController;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 1. 로고 회전: 10초에 한 바퀴 (천천히)
+    _rotationController = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    )..repeat(); // 무한 반복
+
+    // 2. 버튼 두근두근: 1.5초 주기
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true); // 커졌다 작아졌다 반복
+
+    // 크기 변화: 1.0 -> 1.05 (5% 정도만 살짝 커짐)
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ContestStatusModel contestStatus = ref.watch(contestStatusProvider);
     final userState = ref.watch(authProvider);
+
     final String userRegion = (userState.user?.region == 'NotSet' || userState.user?.region == null)
         ? '지역 미설정'
         : userState.user!.region;
 
     final bool isContestActive = contestStatus.currentWeekKey != null;
 
-    return Center(
-      child: SingleChildScrollView( // 화면이 작을 때를 대비해 스크롤 추가
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // 1. 📍 지역 배지 (내 지역 강조)
-            if (isContestActive)
-              Padding(
-                padding:  EdgeInsets.only(bottom: 30.h),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                  decoration: BoxDecoration(
-                    color: AppColor.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20.w),
-                    border: Border.all(color: AppColor.primary.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.location_on_rounded, size: 16.w, color: AppColor.primary),
-                      SizedBox(width: 6.w),
-                      Text(
-                        '$userRegion 챔피언 도전',
-                        style: TextStyle(
-                          color: AppColor.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 30.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          SizedBox(height: 80.h),
 
-            // 2. 메인 아이콘 (그래픽 요소)
+          // 1. 📍 지역 배지
+          if (isContestActive)
             Container(
-              width: 120.w,
-              height: 120.w,
+              margin: EdgeInsets.only(bottom: 24.h),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.w),
+                  border: Border.all(color: AppColor.primary.withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.location_on_rounded, size: 14.w, color: AppColor.primary),
+                  SizedBox(width: 4.w),
+                  Text(
+                    '$userRegion 챔피언 도전',
+                    style: TextStyle(
+                      color: AppColor.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.add_a_photo_rounded, // 카메라+추가 아이콘
-                size: 50.w,
-                color: Colors.grey.shade400,
+            ),
+
+          // 2. ✨ 메인 아이콘 (회전 애니메이션 적용 🔄)
+          Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColor.primary.withOpacity(0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [AppColor.primary, Colors.purpleAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              // 💡 RotationTransition으로 감싸서 360도 회전
+              child: RotationTransition(
+                turns: _rotationController,
+                child: Icon(
+                  Icons.camera,
+                  size: 60.sp,
+                  color: Colors.white,
+                ),
               ),
             ),
-            SizedBox(height: 32.h),
+          ),
 
-            // 3. 텍스트 영역
-            if (isContestActive) ...[
-              Text(
-                "이번 주 주인공은\n바로 당신입니다! ✨",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                  height: 1.3,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Text(
-                "가장 자신 있는 사진을 올리고\n$userRegion 지역의 베스트 픽이 되어보세요.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  color: Colors.grey.shade600,
-                  height: 1.5,
-                ),
-              ),
-            ] else ...[
-              Text(
-                "지금은 휴식 시간이에요 🌙",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Text(
-                "다음 회차가 곧 시작됩니다.\n잠시만 기다려주세요!",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  color: Colors.grey.shade600,
-                  height: 1.5,
-                ),
-              ),
-            ],
+          SizedBox(height: 20.h),
 
-            SizedBox(height: 40.h),
+          // 3. 텍스트 영역
+          if (isContestActive) ...[
+            Text(
+              "이번 주 주인공은\n바로 당신입니다! ✨",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24.sp,
+                fontWeight: FontWeight.w900,
+                color: Colors.black87,
+                height: 1.3,
+                letterSpacing: -0.5,
+              ),
+            ),
+            SizedBox(height: 10.h),
+            Text(
+              "가장 자신 있는 사진을 올리고\n$userRegion 지역의 베스트 픽이 되어보세요.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: Colors.grey.shade500,
+                height: 1.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ] else ...[
+            Text(
+              "지금은 휴식 시간이에요 🌙",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 10.h),
+            Text(
+              "다음 회차가 곧 시작됩니다.\n잠시만 기다려주세요!",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+          ],
 
-            // 4. CTA 버튼 (참가 신청)
-            if (isContestActive)
-              SizedBox(
+          SizedBox(height: 40.h),
+
+          // 4. CTA 버튼 (두근두근 💓 + 시머 ✨)
+          if (isContestActive)
+          // 💡 ScaleTransition으로 두근거리는 효과 적용
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: Container(
                 width: double.infinity,
                 height: 56.h,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColor.primary, Colors.purpleAccent],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16.w),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColor.primary.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton(
                   onPressed: () {
-                    // 참가 신청 화면으로 이동
                     context.goNamed(EntrySubmissionScreen.routeName);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.primary,
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
                     foregroundColor: Colors.white,
-                    elevation: 4, // 버튼 그림자
-                    shadowColor: AppColor.primary.withOpacity(0.4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.w),
                     ),
@@ -151,23 +227,35 @@ class WEntryNotEnteredView extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.bolt_rounded), // 번개 아이콘으로 임팩트
+                      // 아이콘도 살짝 반짝이게
+                      Shimmer.fromColors(
+                        baseColor: Colors.white,
+                        highlightColor: Colors.white.withOpacity(0.5),
+                        period: const Duration(seconds: 2),
+                        child: const Icon(Icons.auto_awesome_rounded),
+                      ),
                       SizedBox(width: 8.w),
-                      Text(
-                        '지금 바로 참가하기',
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
+                      // 💡 텍스트에 Shimmer 적용 (은은하게 빛 지나감)
+                      Shimmer.fromColors(
+                        baseColor: Colors.white,
+                        highlightColor: Colors.grey.shade300, // 살짝 어두운 흰색으로 빛 효과
+                        period: const Duration(milliseconds: 2000),
+                        child: Text(
+                          '지금 바로 참가하기',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
+            ),
 
-            SizedBox(height: 50.h)
-          ],
-        ),
+          SizedBox(height: 40.h),
+        ],
       ),
     );
   }

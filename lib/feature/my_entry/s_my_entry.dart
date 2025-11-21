@@ -19,6 +19,13 @@ class MyEntryScreen extends ConsumerWidget {
 
   // 새로고침 로직
   Future<void> _onRefresh(WidgetRef ref) async {
+
+    // 참가 안했으면 바로 리턴
+    final entryAsync = ref.read(entryProvider);
+    if (entryAsync.value == null) {
+      return;
+    }
+
     ref.invalidate(entryProvider);
     await ref.read(entryProvider.future);
   }
