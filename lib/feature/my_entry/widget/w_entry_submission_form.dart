@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-// 💡 분리된 위젯들 Import (경로 확인 필요)
+// 💡 분리된 위젯들 Import
 import '../../../shared/widget/w_dashed_border_painter.dart';
 import '../../../shared/widget/w_loading_overlay.dart';
 
@@ -28,7 +28,7 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
   File? _selectedImage;
   bool _isAgreed = false;
 
-  // 로컬 로딩 상태 (버튼 비활성화용)
+  // 로컬 로딩 상태
   bool _isLocalLoading = false;
   List<String> _bannedWords = [];
 
@@ -71,11 +71,11 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     return false;
   }
 
-  // 💡 [수정] URL도 필수로 체크
+  // 💡 URL도 필수 조건 포함
   bool _canSubmit() =>
       _selectedImage != null &&
           _snsController.text.trim().isNotEmpty &&
-          _urlController.text.trim().isNotEmpty && // URL 필수
+          _urlController.text.trim().isNotEmpty &&
           _isAgreed &&
           !_isLocalLoading;
 
@@ -90,7 +90,6 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     }
   }
 
-  // 💡 [핵심] showDialog로 로딩 처리 (Stack 에러 해결)
   Future<void> _submitEntry() async {
     if (!_canSubmit()) return;
 
@@ -99,44 +98,44 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
       return;
     }
 
-    // 1. 키보드 내리기 (필수)
+    // 1. 키보드 내리기
     FocusScope.of(context).unfocus();
 
     setState(() {
       _isLocalLoading = true;
     });
 
-    // 2. 로딩 다이얼로그 띄우기
+    // 2. 로딩 다이얼로그
     showDialog(
       context: context,
-      barrierDismissible: false, // 터치로 닫기 방지
+      barrierDismissible: false,
       builder: (context) => const PopScope(
-        canPop: false, // 뒤로가기 방지
+        canPop: false,
         child: WLoadingOverlay(message: '사진을 업로드하고 있어요...\n잠시만 기다려주세요.'),
       ),
     );
 
     try {
-      // 3. 비즈니스 로직 실행
+      // 3. 비즈니스 로직
       await ref.read(entryProvider.notifier).submitNewEntry(
         photo: _selectedImage!,
         snsId: _snsController.text.trim(),
-        snsUrl: _urlController.text.trim(), // URL 전달
+        snsUrl: _urlController.text.trim(),
       );
 
       // 4. 성공 시
       if (mounted) {
-        Navigator.pop(context); // 로딩창 닫기
+        Navigator.pop(context); // 로딩 닫기
         _showSnackbar('참가 신청이 완료되었습니다! 승인을 기다려주세요.');
         context.go('/home?tab=my_entry');
       }
     } catch (e) {
       // 5. 실패 시
       if (mounted) {
-        Navigator.pop(context); // 로딩창 닫기
+        Navigator.pop(context); // 로딩 닫기
         _showSnackbar('신청 실패: ${e.toString().replaceAll('Exception: ', '')}');
         setState(() {
-          _isLocalLoading = false; // 버튼 다시 활성화
+          _isLocalLoading = false;
         });
       }
     }
@@ -164,8 +163,7 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
       return _buildRegionNotSetView(context);
     }
 
-    // 💡 [핵심 수정] Stack 제거 -> SingleChildScrollView만 반환
-    // 이제 키보드가 움직여도 parentDataDirty 에러가 나지 않습니다.
+    // Stack 제거 -> SingleChildScrollView만 사용
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
       child: Column(
@@ -178,26 +176,21 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
               style: TextStyle(fontSize: 14.sp, color: Colors.grey[600])),
           SizedBox(height: 24.h),
 
-          // 사진 선택 영역
+          // 사진 선택
           _buildPhotoSelector(),
 
           SizedBox(height: 24.h),
 
-          // SNS 입력 영역
+          // SNS 입력
           _buildSnsInputField(),
 
           // 약관 동의
           SizedBox(height: 10.h),
           _buildAgreementCheckbox(),
 
-          SizedBox(height: 24.h),
-
-          // 주의 사항
-          _buildWarningBox(),
-
           SizedBox(height: 30.h),
 
-          // 제출 버튼
+          // 💡 버튼을 먼저 배치
           ElevatedButton(
             onPressed: _canSubmit() ? _submitEntry : null,
             style: ElevatedButton.styleFrom(
@@ -211,7 +204,13 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
             child: Text('참가 신청 제출하기',
                 style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
           ),
-          SizedBox(height: 24.h),
+
+          SizedBox(height: 30.h),
+
+          // 💡 맨 하단에 법적 책임 안내 문구 배치 (Footer 느낌)
+          _buildWarningBox(),
+
+          SizedBox(height: 20.h),
         ],
       ),
     );
@@ -307,14 +306,20 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
           style: TextStyle(fontSize: 16.sp),
         ),
 
-        // 💡 URL 입력 필드 (필수)
         Text('홍보용 프로필 링크 (필수)', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black87)),
         SizedBox(height: 8.h),
         TextFormField(
           controller: _urlController,
           enabled: !_isLocalLoading,
           keyboardType: TextInputType.url,
-          onChanged: (value) => setState(() {}), // 입력 시 버튼 상태 업데이트
+          onChanged: (value) => setState(() {}),
+          validator: (value) {
+            if (value != null && _hasProfanity(value)) {
+              return '부적절한 단어가 포함되어 있습니다.';
+            }
+            return null;
+          },
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: 'https://instagram.com/my_id',
             prefixIcon: const Icon(Icons.link, color: Colors.grey),
@@ -323,6 +328,7 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: Colors.grey.shade300)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.w), borderSide: BorderSide(color: AppColor.primary, width: 1.5)),
+            errorStyle: TextStyle(color: Colors.redAccent, fontSize: 12.sp),
             contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
           ),
           style: TextStyle(fontSize: 16.sp),
@@ -359,27 +365,43 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     );
   }
 
+  // 💡 법적 책임 안내 문구 (Footer style)
   Widget _buildWarningBox() {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.red.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12.w),
-        border: Border.all(color: Colors.red.withOpacity(0.1)),
+        border: Border.all(color: Colors.red.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 20.w),
+              Icon(Icons.gpp_maybe_rounded, color: Colors.redAccent, size: 20.w),
               SizedBox(width: 8.w),
-              Text('참가 전 꼭 확인해주세요!', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 14.sp)),
+              Text(
+                '사진 도용 및 법적 책임 안내',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                    fontSize: 14.sp),
+              ),
             ],
           ),
-          SizedBox(height: 8.h),
-          Text('• 제출 후에는 사진 수정이 불가능합니다.\n• 투표 진행 중 중단을 원하시면 [내 참가] 탭에서 언제든지 "비공개" 상태로 전환할 수 있습니다.\n• 부적절한 사진은 예고 없이 승인 거절될 수 있습니다.',
-              style: TextStyle(fontSize: 13.sp, color: Colors.black54, height: 1.5)),
+          SizedBox(height: 10.h),
+          Text(
+            '• 타인의 사진을 무단으로 도용하여 발생한 초상권 침해, 저작권 위반 등 모든 법적 책임은 전적으로 게시자 본인에게 있습니다.\n'
+                '• 도용 사실이 적발될 경우, 예고 없이 계정이 영구 정지되며 관련 법령에 의거하여 민형사상 처벌을 받을 수 있습니다.\n'
+                '• 투표 진행 중 중단을 원하시면 [내 참가] 탭에서 비공개로 전환해주세요.',
+            style: TextStyle(
+                fontSize: 13.sp,
+                color: Colors.black87,
+                height: 1.6,
+                letterSpacing: -0.5
+            ),
+          ),
         ],
       ),
     );
