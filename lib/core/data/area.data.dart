@@ -15,5 +15,6 @@ final List<String> areasGlobalList = [
   "전남",
   "경북",
   "경남",
-  "제주"
+  "제주",
+  "성남시"
 ];

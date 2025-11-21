@@ -4,278 +4,161 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/auth/s_auth_gate.dart';
 import 'package:selfie_pick/feature/inquiry/s_inquiry.dart';
+import 'package:selfie_pick/feature/my_page/widgets/w_mypage_menu_item.dart';
+import 'package:selfie_pick/feature/my_page/widgets/w_mypage_profile_card.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 import '../../core/data/const.dart';
 import '../../shared/dialog/w_custom_confirm_dialog.dart';
-import '../auth/provider/auth_notifier.dart'; // Auth Notifier import
+import '../auth/provider/auth_notifier.dart';
 import '../../model/m_user.dart';
 import '../notice/s_notice.dart';
-import '../notification/s_notification_settings.dart'; // UserModel import (경로가 m_user.dart라고 가정)
-import 'package:url_launcher/url_launcher.dart';
+import '../notification/s_notification_settings.dart';
 
 class MyPageScreen extends ConsumerWidget {
   const MyPageScreen({super.key});
 
-  // --- 🎨 UI 빌더: 메뉴 항목 위젯 ---
-  Widget _buildMenuItem({
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-    Color? titleColor,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
-        decoration: BoxDecoration(
-          border: Border(
-              bottom: BorderSide(color: Colors.grey.shade100, width: 1.h)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 24.sp, color: Colors.grey.shade600),
-            SizedBox(width: 16.w),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: titleColor ?? Colors.black,
-              ),
-            ),
-            const Spacer(),
-            Icon(Icons.arrow_forward_ios,
-                size: 16.sp, color: Colors.grey.shade400),
-          ],
-        ),
-      ),
-    );
+  // --- 🔗 URL 실행 로직 ---
+  Future<void> _launchUrl() async {
+    final Uri uri = Uri.parse(POLICY_URL);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
-  // --- 🎯 로그아웃 핸들러 ---
+  // --- 🚪 로그아웃 로직 ---
   void _handleSignOut(BuildContext context, WidgetRef ref) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
-      routeSettings: RouteSettings(name: 'logout_dialog'),
-      // 🚨 WCustomConfirmDialog 적용
       builder: (context) => const WCustomConfirmDialog(
-        title: '로그아웃 확인',
+        title: '로그아웃',
         content: '정말로 로그아웃 하시겠습니까?',
-        confirmText: '로그아웃', // '확인' 대신 '로그아웃' 텍스트 사용
+        confirmText: '로그아웃',
         cancelText: '취소',
       ),
     );
 
     if (confirm == true) {
-      try {
-        await ref.read(authProvider.notifier).signOut();
-        if (context.mounted) {
-          // go_router를 통해 AuthGateScreen으로 이동 (깔끔한 라우팅 로직)
-          context.go(AuthGateScreen.routeName);
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('로그아웃 실패: ${e.toString()}')),
-          );
-        }
-      }
+      await ref.read(authProvider.notifier).signOut();
+      if (context.mounted) context.go(AuthGateScreen.routeName);
     }
   }
 
-  // ------------------------------------------------------------------
-  // --- 🎯 회원 탈퇴 핸들러 (새로 추가) ---
-  // ------------------------------------------------------------------
+  // --- 💔 회원 탈퇴 로직 ---
   void _handleWithdrawal(BuildContext context, WidgetRef ref) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => const WCustomConfirmDialog(
-        title: '회원 탈퇴 확인',
-        // 🚨 내용 강조
-        content: '모든 데이터는 복구할 수 없습니다.\n정말로 탈퇴하시겠습니까?',
-        confirmText: '탈퇴하기', // 파괴적 작업은 '탈퇴하기'로 명확히 표시
+        title: '회원 탈퇴',
+        content: '탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?',
+        confirmText: '탈퇴하기',
         cancelText: '취소',
       ),
     );
 
     if (confirm == true) {
-      try {
-        // 🚨 Auth Notifier의 withdraw 메서드 호출 (가정)
-        await ref.read(authProvider.notifier).withdraw();
-        if (context.mounted) {
-          // 탈퇴 성공 후 로그인 게이트로 이동
-          context.go(AuthGateScreen.routeName);
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('회원 탈퇴 실패: ${e.toString()}')),
-          );
-        }
-      }
+      await ref.read(authProvider.notifier).withdraw();
+      if (context.mounted) context.go(AuthGateScreen.routeName);
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. 사용자 정보 감시 (Riverpod)
     final authState = ref.watch(authProvider);
     final UserModel? user = authState.user;
 
-    // 2. ScreenUtil 초기화 (최상위에서 이미 되었다고 가정)
-    // 3. UI 구성
     return Scaffold(
+      backgroundColor: Colors.grey.shade50, // 전체 배경을 연한 회색으로
       appBar: AppBar(
-        title: const Text('마이페이지'),
-        elevation: 0,
+        title: const Text('마이페이지', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- A. 사용자 정보 섹션 ---
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 30.h, horizontal: 20.w),
-              color: Colors.grey.shade50,
-              child: Row(
-                children: [
-                  // 프로필 아이콘 (임시)
-                  CircleAvatar(
-                    radius: 30.r,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: Text(
-                      user?.email.substring(0, 1).toUpperCase() ?? '?',
-                      style: TextStyle(
-                          fontSize: 24.sp,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.email ?? '로그인 필요',
-                        style: TextStyle(
-                            fontSize: 18.sp, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4.h),
-                      Row(
-                        children: [
-                          // 지역 (시 단위)
-                          Icon(Icons.location_on,
-                              size: 16.sp, color: Colors.grey),
-                          SizedBox(width: 4.w),
-                          Text(
-                            user?.region == 'NotSet'
-                                ? '지역 미설정'
-                                : user?.region ?? '미설정',
-                            style: TextStyle(
-                                fontSize: 14.sp, color: Colors.grey.shade700),
-                          ),
-                          SizedBox(width: 12.w),
-                          // 성별
-                          Icon(
-                            user?.gender == 'Female'
-                                ? Icons.female
-                                : Icons.male,
-                            size: 16.sp,
-                            color: user?.gender == 'Female'
-                                ? Colors.pink
-                                : Colors.blue,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            user?.gender == 'Female'
-                                ? '여성'
-                                : (user?.gender == 'Male' ? '남성' : '미설정'),
-                            style: TextStyle(
-                                fontSize: 14.sp, color: Colors.grey.shade700),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            // 1. 프로필 카드
+            WMyPageProfileCard(user: user),
 
-            // --- B. 설정 및 고객 지원 섹션 ---
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 10.h),
-              child: Text('   설정 및 지원',
-                  style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
-            ),
+            SizedBox(height: 12.h), // 섹션 간격
 
-            // 1. 알림 설정
-            _buildMenuItem(
-              title: '알림 설정',
-              icon: Icons.notifications,
-              onTap: () {
-                context.goNamed(NotificationSettingsScreen.routeName);
-              },
-            ),
-            // 2. 공지사항
-            _buildMenuItem(
+            // 2. 고객 지원 섹션
+            _buildSectionHeader('고객 지원'),
+            WMyPageMenuItem(
               title: '공지사항',
-              icon: Icons.campaign,
-              onTap: () {
-                context.goNamed(NoticeScreen.routeName);
-              },
+              icon: Icons.campaign_outlined,
+              onTap: () => context.goNamed(NoticeScreen.routeName),
             ),
-            // 3. 문의 (1:1)
-            _buildMenuItem(
-              title: '1:1 문의',
-              icon: Icons.support_agent,
-              onTap: () {
-                context.goNamed(InquiryScreen.routeName);
-              },
+            WMyPageMenuItem(
+              title: '1:1 문의하기',
+              icon: Icons.support_agent_outlined,
+              onTap: () => context.goNamed(InquiryScreen.routeName),
             ),
-            // 4. 운영 정책
-            _buildMenuItem(
+            WMyPageMenuItem(
               title: '운영 정책 및 약관',
-              icon: Icons.policy,
+              icon: Icons.policy_outlined,
               onTap: _launchUrl,
             ),
 
-            // --- C. 계정 관리 섹션 ---
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 10.h),
-              child: Text('   계정 관리',
-                  style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
-            ),
+            SizedBox(height: 12.h),
 
-            // 5. 로그아웃
-            _buildMenuItem(
+            // 3. 설정 및 관리 섹션
+            _buildSectionHeader('설정 및 관리'),
+            WMyPageMenuItem(
+              title: '알림 설정',
+              icon: Icons.notifications_outlined,
+              onTap: () => context.goNamed(NotificationSettingsScreen.routeName),
+            ),
+            WMyPageMenuItem(
               title: '로그아웃',
-              icon: Icons.logout,
+              icon: Icons.logout_rounded,
+              titleColor: Colors.blueAccent,
+              showArrow: false, // 로그아웃은 화살표 뺌 (취향차이)
               onTap: () => _handleSignOut(context, ref),
-              titleColor: Colors.blue,
+            ),
+            WMyPageMenuItem(
+              title: '회원 탈퇴',
+              icon: Icons.person_remove_outlined,
+              titleColor: Colors.redAccent,
+              showArrow: false,
+              onTap: () => _handleWithdrawal(context, ref),
             ),
 
-            // 6. 회원 탈퇴
-            _buildMenuItem(
-              title: '회원 탈퇴',
-              icon: Icons.person_remove,
-              onTap: () => _handleWithdrawal(context, ref),
-              titleColor: Colors.red,
+            SizedBox(height: 40.h),
+
+            // 4. 앱 버전 정보 (하단 마무리)
+            Center(
+              child: Text(
+                '현재 버전 1.0.0',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 12.sp),
+              ),
             ),
-            SizedBox(height: 50.h),
+            SizedBox(height: 40.h),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _launchUrl() async {
-    final Uri uri = Uri.parse(POLICY_URL);
-    if ((uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty) {
-      await launchUrl(uri);
-    }
-    return;
+  // 섹션 헤더 빌더
+  Widget _buildSectionHeader(String title) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 8.h),
+      color: Colors.grey.shade50,
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13.sp,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade600,
+        ),
+      ),
+    );
   }
 }

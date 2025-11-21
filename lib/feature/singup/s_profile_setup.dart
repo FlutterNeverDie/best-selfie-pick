@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/home/s_home.dart';
-import '../../core/data/region.data.dart';
+import '../../core/data/area.data.dart';
 import '../../core/theme/colors/app_color.dart';
-import '../auth/provider/auth_notifier.dart';
+import '../auth/provider/auth_notifier.dart'; 
 
 // NOTE: 이 파일은 소셜 로그인 후 필수 정보 (지역/성별) 입력을 위한 전용 화면입니다.
 class SocialProfileSetupScreen extends ConsumerStatefulWidget {
@@ -108,7 +108,7 @@ class _SocialProfileSetupScreenState
             ),
           ),
           value: _selectedRegion,
-          items: regions
+          items: areasGlobalList
               .map((region) => DropdownMenuItem(
             value: region,
             child: Text(region, style: TextStyle(fontSize: 16.sp)),

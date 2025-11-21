@@ -298,5 +298,33 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  /// 12. 🎯 [신규] 지역 변경 함수
+  Future<void> updateRegion(String newRegion) async {
+    final currentUser = state.user;
+    if (currentUser == null) return;
+
+    // 로딩 시작 (UI에서 로딩 인디케이터를 띄우고 싶다면)
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // 1. Repository를 통해 DB 업데이트
+      await _repository.updateUserRegion(currentUser.uid, newRegion);
+
+      // 2. 💡 로컬 상태(state) 즉시 업데이트 (새로고침 불필요하게 만듦)
+      // currentUser.copyWith는 UserModel에 copyWith가 구현되어 있어야 합니다.
+      final updatedUser = currentUser.copyWith(
+        region: newRegion,
+      );
+
+      state = state.copyWith(
+        user: updatedUser,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow; // UI에서 스낵바 등을 띄우기 위해 에러를 다시 던짐
+    }
+  }
+
 
 }

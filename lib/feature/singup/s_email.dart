@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/home/s_home.dart';
 import 'package:selfie_pick/feature/singup/s_login.dart';
 
-import '../../core/data/region.data.dart';
+import '../../core/data/area.data.dart';
 import '../../core/theme/colors/app_color.dart';
 import '../auth/provider/auth_notifier.dart'; // Auth Notifier import
 
@@ -295,7 +295,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
             ),
           ),
           value: _selectedRegion,
-          items: regions
+          items: areasGlobalList
               .map((region) => DropdownMenuItem(
                     value: region,
                     child: Text(region, style: TextStyle(fontSize: 16.sp)),

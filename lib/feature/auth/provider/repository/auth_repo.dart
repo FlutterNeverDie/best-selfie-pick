@@ -309,4 +309,15 @@ class AuthRepo {
     // 5. 소셜 SDK 세션 정리 (로그아웃 로직 재사용)
     await signOut();
   }
+
+  Future<void> updateUserRegion(String uid, String newRegion) async {
+    try {
+      await _firestore.collection(MyCollection.USERS).doc(uid).update({
+        'region': newRegion,
+        'regionUpdatedAt': FieldValue.serverTimestamp(), // 변경 시간 기록 (나중에 쿨타임 적용 등에 활용 가능)
+      });
+    } catch (e) {
+      throw Exception('지역 정보를 업데이트하는 중 오류가 발생했습니다: $e');
+    }
+  }
 }

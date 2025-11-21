@@ -34,7 +34,5 @@ class ContestStatusNotifier extends Notifier<ContestStatusModel> {
     return model;
   }
 
-// 💡 참고: 실제 앱에서는 1초 타이머를 사용하여 이 build() 로직을
-// 주기적으로 재실행하거나, 서버 시간을 참조하여 정확도를 높일 수 있습니다.
-// MVP 단계에서는 build() 초기값으로 충분합니다.
+
 }

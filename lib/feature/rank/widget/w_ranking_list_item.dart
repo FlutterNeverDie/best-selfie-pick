@@ -47,6 +47,7 @@ class WRankingListItem extends StatelessWidget {
       context: context,
       // 💡 딤(Dim) 투명도 조절: 0.8 (너무 어둡지 않게)
       barrierColor: Colors.black.withOpacity(0.8),
+      routeSettings: RouteSettings(name: 'RankingImageDetailDialog'),
       builder: (context) => RankingImageDetailDialog(entry: entry),
     );
   }
