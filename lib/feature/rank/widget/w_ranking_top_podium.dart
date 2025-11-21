@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart'; // 💡 Shimmer 패키지 import
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:text_gradiate/text_gradiate.dart';
 
 // 💡 타이머 위젯 Import
-import '../provider/dialog/d_ranking_image_detail.dart';
 import 'w_ranking_timer.dart';
+import '../provider/dialog/d_ranking_image_detail.dart'; // 다이얼로그 import
 
 class WRankingTopPodium extends StatelessWidget {
   final List<EntryModel> topThree;
@@ -23,7 +24,6 @@ class WRankingTopPodium extends StatelessWidget {
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-      // 💡 내부 패딩 조정 (상단 여백을 줄여 타이틀을 위로 올림)
       padding: EdgeInsets.only(top: 16.h, bottom: 10.h),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -42,10 +42,9 @@ class WRankingTopPodium extends StatelessWidget {
         children: [
           // 1. 🔥 실시간 핫 픽 타이틀
           Padding(
-            // 하단 패딩을 줄여 타이머와 가깝게 배치
             padding: EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 8.h),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center, // 가운데 정렬
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextGradiate(
                   text: Text(
@@ -67,7 +66,7 @@ class WRankingTopPodium extends StatelessWidget {
             ),
           ),
 
-          // 2. ⏰ 타이머 (타이틀의 서브 텍스트처럼 배치)
+          // 2. ⏰ 타이머
           const WRankingTimer(),
 
           SizedBox(height: 24.h), // 타이머와 포디움 사이 간격 확보
@@ -114,30 +113,33 @@ class WRankingTopPodium extends StatelessWidget {
     final double cardHeight = isFirst ? 150.h : 120.h;
 
     Color rankColor;
-    List<Color> gradientColors;
     String rankLabel;
 
     switch (rank) {
       case 1:
-        rankColor = const Color(0xFFFFD700);
-        gradientColors = [const Color(0xFFFFD700), const Color(0xFFFFA500)];
+        rankColor = const Color(0xFFFFD700); // Gold
         rankLabel = '1st';
         break;
       case 2:
-        rankColor = const Color(0xFFC0C0C0);
-        gradientColors = [const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)];
+        rankColor = const Color(0xFFC0C0C0); // Silver
         rankLabel = '2nd';
         break;
       case 3:
-        rankColor = const Color(0xFFCD7F32);
-        gradientColors = [const Color(0xFFFFAB91), const Color(0xFF8D6E63)];
+        rankColor = const Color(0xFFCD7F32); // Bronze
         rankLabel = '3rd';
         break;
       default:
         rankColor = Colors.grey;
-        gradientColors = [Colors.grey, Colors.black];
         rankLabel = '';
     }
+
+    // 💡 Shimmer 효과를 위한 기본 텍스트 스타일 정의
+    final baseTextStyle = TextStyle(
+      fontSize: isFirst ? 14.sp : 12.sp,
+      fontWeight: FontWeight.bold,
+      color: Colors.black87, // Shimmer의 baseColor로 사용
+      overflow: TextOverflow.ellipsis,
+    );
 
     return GestureDetector(
       onTap: () {
@@ -236,33 +238,17 @@ class WRankingTopPodium extends StatelessWidget {
 
             SizedBox(height: 8.h),
 
-
-            Text(
-              '@${entry.snsId}',
-              style: TextStyle(
-                fontSize: isFirst ? 14.sp : 12.sp,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-/*            TextGradiate(
-              text: Text(
+            // 💡 [수정] TextGradiate 대신 Shimmer 적용
+            Shimmer.fromColors(
+              // Shimmer의 highlightColor를 랭킹 색상으로 사용하여 금속성 광택 느낌
+              baseColor: Colors.black87,
+              highlightColor: rankColor,
+              period: const Duration(seconds: 2),
+              child: Text(
                 '@${entry.snsId}',
-                style: TextStyle(
-                  fontSize: isFirst ? 14.sp : 12.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                style: baseTextStyle, // 위에서 정의한 스타일 사용
               ),
-              colors: gradientColors,
-              gradientType: GradientType.linear,
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),*/
+            ),
           ],
         ),
       ),

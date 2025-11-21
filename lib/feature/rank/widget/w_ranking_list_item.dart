@@ -90,14 +90,7 @@ class WRankingListItem extends StatelessWidget {
                     child: isTopThree
                     // 💡 요청하신 대로 emoji_events 아이콘 통일 + 색상 변경
                         ? Icon(Icons.emoji_events, color: rankColor, size: 30.w)
-                        : Text(
-                      '$rank',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
+                        : Icon(Icons.circle, color: rankColor, size: 10.w)
                   ),
                 ),
                 SizedBox(width: 12.w),

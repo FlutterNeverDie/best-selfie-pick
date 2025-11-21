@@ -8,7 +8,6 @@ import 'package:text_gradiate/text_gradiate.dart';
 
 import '../../../shared/admob/w_banner_ad.dart';
 import 'w_ranking_top_podium.dart';
-// import '../../../shared/widget/w_banner_ad.dart'; // 💡 광고 임시 주석 처리
 import '../provider/vote_provider.dart';
 
 class WRankingListView extends ConsumerWidget {
@@ -51,7 +50,8 @@ class WRankingListView extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             // 💡 [광고] 상단 배너 주석 처리
+            // 1. [상단 광고] 작게 (320x50)
+            // 💡 실시간 핫픽 위에 배치
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12.h),
               child: const Center(
@@ -59,54 +59,72 @@ class WRankingListView extends ConsumerWidget {
               ),
             ),
 
-
-
-
-            // 2. 시상대 위젯 (내부에 타이머 포함됨)
+            // 3. 시상대 위젯 (타이머 포함)
             if (topThree.isNotEmpty)
               WRankingTopPodium(topThree: topThree),
 
-            // 3. 나머지 참가자 섹션
+            // 4. 나머지 참가자 섹션
             if (challengers.isNotEmpty) ...[
-              SizedBox(height: 20.h),
+              SizedBox(height: 24.h),
 
-              /*
-              // 💡 [광고] 중간 배너 주석 처리
+              // 💡 5. [중간 광고] 크게 (300x250)
+              // 위클리 라인업 바로 위에 배치하여 시선 집중
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 10.h),
                 child: const Center(
                   child: WBannerAd(adSize: AdSize.mediumRectangle),
                 ),
               ),
-              */
 
-              // SizedBox(height: 20.h),
+              SizedBox(height: 24.h),
 
+              // 💡 [디자인 수정] 위클리 라인업 헤더 (매거진 스타일)
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(6.w),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
+                child: IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      // 1. 악센트 라인 (왼쪽 세로줄)
+                      Container(
+                        width: 4.w,
+                        decoration: BoxDecoration(
+                          color: Colors.black87, // 혹은 AppColor.primary
+                          borderRadius: BorderRadius.circular(2.w),
+                        ),
                       ),
-                      child: Icon(Icons.view_agenda_outlined, color: Colors.grey.shade800, size: 20.w),
-                    ),
-                    SizedBox(width: 10.w),
-                    Text(
-                      '위클리 라인업',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
+                      SizedBox(width: 12.w),
+
+                      // 2. 타이틀 및 서브 타이틀
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'WEEKLY LINEUP',
+                            style: TextStyle(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.black87,
+                              letterSpacing: 1.0, // 자간을 넓혀서 세련되게
+                              height: 1.0,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            '순서는 투표율과 무관합니다.',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
+              // 리스트 아이템
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -116,7 +134,7 @@ class WRankingListView extends ConsumerWidget {
                   return WRankingListItem(
                     key: ValueKey(challengers[index].entryId),
                     entry: challengers[index],
-                    rank: index + 4,
+                    rank: index + 4, // 4위부터 시작
                   );
                 },
               ),
