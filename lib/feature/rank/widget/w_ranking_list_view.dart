@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart'; // 💡 AdSize 사용을 위해 추가
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/feature/rank/widget/w_ranking_list_item.dart';
 import 'package:text_gradiate/text_gradiate.dart';
 
 import '../../../shared/admob/w_banner_ad.dart';
+import 'w_ranking_top_podium.dart';
+// import '../../../shared/widget/w_banner_ad.dart'; // 💡 광고 임시 주석 처리
 import '../provider/vote_provider.dart';
 
 class WRankingListView extends ConsumerWidget {
@@ -49,76 +51,50 @@ class WRankingListView extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-  /*          // 💡 1. [상단 광고] 작게 (Standard Banner)
+             // 💡 [광고] 상단 배너 주석 처리
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12.h),
               child: const Center(
-                child: WBannerAd(adSize: AdSize.banner), // 320x50
-              ),
-            ),*/
-
-            // ----------------------------------------------------
-            // Section 1: Top 3 (실시간 핫 픽)
-            // ----------------------------------------------------
-            Padding(
-              padding: EdgeInsets.only(top: 8.h, left: 20.w, right: 20.w, bottom: 16.h),
-              child: Row(
-                children: [
-                  TextGradiate(
-                    text: Text(
-                      '실시간 핫 픽 (Top 3)',
-                      style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w900),
-                    ),
-                    colors: [
-                      Colors.pinkAccent.shade700,
-                      Colors.purpleAccent,
-                      Colors.deepPurpleAccent,
-                    ],
-                    gradientType: GradientType.linear,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text('🔥', style: TextStyle(fontSize: 22.sp)),
-                ],
+                child: WBannerAd(adSize: AdSize.banner),
               ),
             ),
 
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              itemCount: topThree.length,
-              separatorBuilder: (context, index) => SizedBox(height: 8.h),
-              itemBuilder: (context, index) {
-                return WRankingListItem(
-                  key: ValueKey(topThree[index].entryId),
-                  entry: topThree[index],
-                  rank: index + 1,
-                );
-              },
-            ),
 
-            // ----------------------------------------------------
-            // Section 2: 나머지 참가자 (위클리 라인업)
-            // ----------------------------------------------------
+
+
+            // 2. 시상대 위젯 (내부에 타이머 포함됨)
+            if (topThree.isNotEmpty)
+              WRankingTopPodium(topThree: topThree),
+
+            // 3. 나머지 참가자 섹션
             if (challengers.isNotEmpty) ...[
+              SizedBox(height: 20.h),
 
-              // 💡 2. [중간 광고] 크게 (Medium Rectangle)
-              // 섹션 구분선 역할도 하면서 시선을 확 끄는 큰 배너
+              /*
+              // 💡 [광고] 중간 배너 주석 처리
               Padding(
-                padding: EdgeInsets.symmetric(vertical: 16.h),
+                padding: EdgeInsets.symmetric(vertical: 10.h),
                 child: const Center(
-                  child: WBannerAd(adSize: AdSize.mediumRectangle), // 300x250
+                  child: WBannerAd(adSize: AdSize.mediumRectangle),
                 ),
               ),
+              */
+
+              // SizedBox(height: 20.h),
 
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
                 child: Row(
                   children: [
-                    Icon(Icons.view_agenda_outlined, color: Colors.grey.shade800, size: 22.w),
-                    SizedBox(width: 8.w),
+                    Container(
+                      padding: EdgeInsets.all(6.w),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.view_agenda_outlined, color: Colors.grey.shade800, size: 20.w),
+                    ),
+                    SizedBox(width: 10.w),
                     Text(
                       '위클리 라인업',
                       style: TextStyle(
@@ -146,7 +122,7 @@ class WRankingListView extends ConsumerWidget {
               ),
             ],
 
-            SizedBox(height: 50.h), // 하단 여백
+            SizedBox(height: 50.h),
           ],
         ),
       ),
