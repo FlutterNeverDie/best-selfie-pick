@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-
 import '../service/ad_service.dart';
 
 class WBannerAd extends StatefulWidget {
-  const WBannerAd({super.key});
+  final AdSize adSize; // 💡 사이즈 파라미터 추가
+
+  const WBannerAd({
+    super.key,
+    this.adSize = AdSize.banner, // 기본값
+  });
 
   @override
   State<WBannerAd> createState() => _WBannerAdState();
@@ -24,6 +28,7 @@ class _WBannerAdState extends State<WBannerAd> {
 
   void _loadAd() {
     _bannerAd = _adService.createBannerAd(
+      size: widget.adSize, // 💡 전달받은 사이즈 사용
       onAdLoaded: (ad) {
         if (mounted) {
           setState(() {
@@ -31,20 +36,23 @@ class _WBannerAdState extends State<WBannerAd> {
           });
         }
       },
-    )..load(); // 생성 후 바로 로드 시작
+    )..load();
   }
 
   @override
   void dispose() {
-    _bannerAd?.dispose(); // 💡 메모리 누수 방지 (필수)
+    _bannerAd?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 광고가 로드되지 않았으면 공간을 차지하지 않음 (또는 빈 박스)
     if (!_isLoaded || _bannerAd == null) {
-      return SizedBox(height: 50.h); // 로딩 중일 때 빈 공간 유지 (레이아웃 덜컥거림 방지)
+      // 로딩 중일 때 자리 차지하지 않도록
+      return SizedBox(
+        width: widget.adSize.width.toDouble(),
+        height: widget.adSize.height.toDouble(),
+      );
     }
 
     return SizedBox(
