@@ -6,6 +6,7 @@ class WMyPageMenuItem extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final Color? titleColor;
+  final Color? iconColor;
   final bool showArrow;
 
   const WMyPageMenuItem({
@@ -14,26 +15,39 @@ class WMyPageMenuItem extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.titleColor,
+    this.iconColor,
     this.showArrow = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Colors.transparent, // 부모 배경 따름
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.shade100, width: 1.h),
-            ),
-          ),
+        splashColor: Colors.grey.withOpacity(0.1),
+        highlightColor: Colors.grey.withOpacity(0.05),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 20.w),
           child: Row(
             children: [
-              Icon(icon, size: 22.sp, color: Colors.grey.shade500),
+              // 아이콘 박스 (조금 더 이쁘게)
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: (iconColor ?? Colors.grey.shade600).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10.w),
+                ),
+                child: Icon(
+                    icon,
+                    size: 20.sp,
+                    color: iconColor ?? Colors.grey.shade700
+                ),
+              ),
+
               SizedBox(width: 16.w),
+
+              // 타이틀
               Text(
                 title,
                 style: TextStyle(
@@ -42,7 +56,10 @@ class WMyPageMenuItem extends StatelessWidget {
                   color: titleColor ?? Colors.black87,
                 ),
               ),
+
               const Spacer(),
+
+              // 화살표
               if (showArrow)
                 Icon(Icons.arrow_forward_ios_rounded, size: 14.sp, color: Colors.grey.shade300),
             ],
