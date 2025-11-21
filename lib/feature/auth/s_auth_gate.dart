@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/feature/home/s_home.dart';
-import 'package:selfie_pick/feature/singup/s_signup.dart';
+import 'package:selfie_pick/feature/singup/s_welcome.dart';
 
 import '../../core/theme/colors/app_color.dart';
 
@@ -26,7 +26,7 @@ class AuthGateScreen extends ConsumerWidget {
         if (authState.user == null) {
 
           // 로그아웃 상태: 회원가입/로그인 화면으로 이동 (경로: /signup)
-          context.go(SignupScreen.routeName);
+          context.go(WelcomeScreen.routeName);
 
         } else {
 

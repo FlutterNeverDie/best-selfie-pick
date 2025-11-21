@@ -161,7 +161,7 @@ class WMyEntryAppBar extends ConsumerWidget implements PreferredSizeWidget {
             }
           }
         },
-
+        routeSettings: const RouteSettings(name: 'entry_status_popup_menu'),
         itemBuilder: (BuildContext context) => [
           PopupMenuItem<String>(
             value: action,

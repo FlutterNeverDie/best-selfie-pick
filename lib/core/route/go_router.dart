@@ -5,7 +5,7 @@ import 'package:selfie_pick/core/route/route.dart';
 import 'package:selfie_pick/core/route/route_observer.dart';
 import 'package:selfie_pick/feature/auth/s_auth_gate.dart';
 import 'package:selfie_pick/feature/home/s_home.dart';
-import 'package:selfie_pick/feature/singup/s_signup.dart';
+import 'package:selfie_pick/feature/singup/s_welcome.dart';
 
 import '../../app.dart';
 import '../../feature/auth/provider/auth_notifier.dart';
@@ -47,14 +47,14 @@ final GoRouter router = GoRouter(
     final currentPath = state.uri.toString();
 
     // 비인증 경로 목록 (로그인, 회원가입 관련)
-    final isGuestRoute = currentPath.startsWith(SignupScreen.routeName);
+    final isGuestRoute = currentPath.startsWith(WelcomeScreen.routeName);
     final isSetupRoute = currentPath.startsWith(SocialProfileSetupScreen.routeName);
 
     // ⭐️ 핵심 디버그: 현재 상태와 플래그 출력 (한국어)
     if (shouldShowRedirectDebug) {
       debugPrint('   - 인증 상태: ${authState.user != null ? '✅ 로그인됨' : '❌ 로그아웃됨'}');
       debugPrint('   - 프로필 미완료: ${isProfileIncomplete ? '⚠️ 예' : '✅ 아니오'}');
-      debugPrint('   - 비인증 경로 진입?: $isGuestRoute (경로: ${SignupScreen.routeName})');
+      debugPrint('   - 비인증 경로 진입?: $isGuestRoute (경로: ${WelcomeScreen.routeName})');
       debugPrint('   - 프로필 설정 경로?: $isSetupRoute (경로: ${SocialProfileSetupScreen.routeName})');
     }
 
@@ -69,9 +69,9 @@ final GoRouter router = GoRouter(
         return null;
       }
       if (shouldShowRedirectDebug) {
-        debugPrint('   -> 결과: ${SignupScreen.routeName}로 리디렉션 (로그인 필요)');
+        debugPrint('   -> 결과: ${WelcomeScreen.routeName}로 리디렉션 (로그인 필요)');
       }
-      return SignupScreen.routeName;
+      return WelcomeScreen.routeName;
     }
 
     // Case 2: 로그인 상태일 때 (isLoggedIn == true)
@@ -79,7 +79,7 @@ final GoRouter router = GoRouter(
     // 2-1: 프로필 미완료 상태일 때 (isProfileIncomplete == true)
     if (isProfileIncomplete) {
       // ⚠️ 수정: 전체 경로(Full Path)를 구성하여 반환해야 합니다.
-      final setupPath = '${SignupScreen.routeName}/${SocialProfileSetupScreen.routeName}';
+      final setupPath = '${WelcomeScreen.routeName}/${SocialProfileSetupScreen.routeName}';
 
       // 이미 프로필 설정 화면으로 가고 있다면 이동 허용
       if (state.uri.toString().startsWith(setupPath)) {
@@ -188,7 +188,7 @@ final GoRouter router = GoRouter(
                         }
 
                         // 2. 로그인 페이지로 이동 (/signup은 이 프로젝트의 초기 진입 경로)
-                        context.go(SignupScreen.routeName);
+                        context.go(WelcomeScreen.routeName);
                       },
                       // 수정: 버튼 텍스트 변경
                       child: const Text('재시작'),

@@ -9,7 +9,7 @@ import '../../feature/my_entry/s_entry_submission_screen.dart';
 import '../../feature/notification/s_notification_settings.dart';
 import '../../feature/singup/s_email.dart';
 import '../../feature/singup/s_profile_setup.dart';
-import '../../feature/singup/s_signup.dart';
+import '../../feature/singup/s_welcome.dart';
 
 
 
@@ -53,9 +53,9 @@ final List<GoRoute> appRoutes = [
 
   // 3. 비인증 경로
   GoRoute(
-    name: 'signup_screen',
-    path: SignupScreen.routeName,
-    builder: (context, state) => const SignupScreen(),
+    name: 'welcome_screen',
+    path: WelcomeScreen.routeName,
+    builder: (context, state) => const WelcomeScreen(),
     routes: [
       GoRoute(
         name: 'email_signup_screen',
