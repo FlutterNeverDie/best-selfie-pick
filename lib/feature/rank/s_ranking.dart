@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/rank/provider/vote_provider.dart';
 import 'package:selfie_pick/feature/rank/widget/w_no_candidates_message.dart';
+import 'package:selfie_pick/feature/rank/widget/w_ranking_app_bar.dart';
 import 'package:selfie_pick/feature/rank/widget/w_ranking_list_view.dart';
 import 'package:selfie_pick/feature/rank/widget/w_voting_discovery.dart';
 
@@ -33,19 +34,7 @@ class RankingScreen extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator(color: Colors.pinkAccent));
     }
     return Scaffold(
-      appBar: AppBar(
-        title:
-        Text(
-          voteStatus.isVoted ? '베스트 픽 랭킹' : '베스트 픽 투표',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppColor.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: WRankingAppBar(),
       body: voteStatus.isVoted
           ? WRankingListView(
         // 투표 완료 시: 순위 조회 화면

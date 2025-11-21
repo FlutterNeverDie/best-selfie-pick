@@ -7,6 +7,7 @@ import 'package:selfie_pick/feature/my_entry/widget/w_entry_approved_view.dart';
 import 'package:selfie_pick/feature/my_entry/widget/w_entry_not_entered_view.dart';
 import 'package:selfie_pick/feature/my_entry/widget/w_entry_pending_view.dart';
 import 'package:selfie_pick/feature/my_entry/widget/w_entry_rejected_view.dart';
+import 'package:selfie_pick/feature/my_entry/widget/w_my_entry_app_bar.dart';
 
 import '../../core/theme/colors/app_color.dart';
 import '../../shared/dialog/w_custom_confirm_dialog.dart';
@@ -164,16 +165,7 @@ class MyEntryScreen extends ConsumerWidget {
     final EntryModel? entryModel = entryAsync.value;
 
     return Scaffold(
-      appBar: AppBar(
-          title: const Text('내 참가 현황'),
-          backgroundColor: AppColor.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          actions: [
-            if (entryModel != null && (entryModel.status == 'approved' || entryModel.status == 'private'))
-              _buildStatusMenu(context, ref, entryModel),
-          ]
-      ),
+      appBar: WMyEntryAppBar(),
       body: RefreshIndicator(
         onRefresh: () => _onRefresh(ref),
         color: AppColor.primary,
