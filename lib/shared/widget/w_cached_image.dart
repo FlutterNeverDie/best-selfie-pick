@@ -25,38 +25,29 @@ class WCachedImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 💡 Stack이 부모 영역을 채우도록 Positioned.fill 사용
-    return Stack(
-      fit: StackFit.expand, // Stack이 부모 제약 조건을 최대한 따르도록 설정
-      children: [
-        // 1. CachedNetworkImage: 크기와 fit 옵션 적용
-        // 명시적인 width/height가 없으면 Stack이 전체 영역을 사용하도록 Positioned.fill로 감쌈
-        Positioned.fill( // 💡 Positioned.fill 추가 (Stack의 전체 영역을 사용하도록 강제)
-          child: CachedNetworkImage(
-            imageUrl: imageUrl,
-            // 💡 width, height 인자를 Positioned.fill이 제어하므로 제거
-            // width: width?.w,
-            // height: height?.h,
-            fit: fit,
-            color: overlayColor,
-            colorBlendMode: overlayBlendMode,
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      // 💡 width, height 인자를 Positioned.fill이 제어하므로 제거
+      // width: width?.w,
+      // height: height?.h,
+      fit: fit,
+      color: overlayColor,
+      colorBlendMode: overlayBlendMode,
 
-            placeholder: (context, url) => Container(
-              color: Colors.grey[200],
-              child: Center(
-                child: SizedBox(
-                  width: 30.w,
-                  height: 30.w,
-                  child: CircularProgressIndicator(strokeWidth: 2.w, color: Colors.grey),
-                ),
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: Colors.grey[300],
-              child: Icon(Icons.broken_image, size: 50.w, color: Colors.grey.shade600),
-            ),
+      placeholder: (context, url) => Container(
+        color: Colors.grey[200],
+        child: Center(
+          child: SizedBox(
+            width: 30.w,
+            height: 30.w,
+            child: CircularProgressIndicator(strokeWidth: 2.w, color: Colors.grey),
           ),
         ),
-      ],
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: Colors.grey[300],
+        child: Icon(Icons.broken_image, size: 50.w, color: Colors.grey.shade600),
+      ),
     );
   }
 }
