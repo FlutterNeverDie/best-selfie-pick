@@ -18,8 +18,8 @@ class WMyEntryAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Future<bool?> _showConfirmationDialog(BuildContext context, String action) async {
     final String title = action == 'private' ? '비공개 전환 확인' : '공개 전환 확인';
     final String content = action == 'private'
-        ? '사진을 즉시 투표 대상에서 제외하고 비공개 상태로 전환합니다.\n(전환 시 5초 광고 시청)'
-        : '사진을 다시 투표 목록에 노출하고 공개 상태로 전환합니다.\n(전환 시 5초 광고 시청)';
+        ? '사진을 즉시 투표 대상에서 제외하고 비공개 상태로 전환합니다.'
+        : '사진을 다시 투표 목록에 노출하고 공개 상태로 전환합니다.';
 
     return await showDialog<bool>(
       context: context,
