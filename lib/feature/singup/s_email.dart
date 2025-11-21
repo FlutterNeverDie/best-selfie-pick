@@ -5,13 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/home/s_home.dart';
 import 'package:selfie_pick/feature/singup/s_login.dart';
 
-import '../../core/data/area.data.dart';
 import '../../core/theme/colors/app_color.dart';
-import '../auth/provider/auth_notifier.dart'; // Auth Notifier import
-
-// NOTE: 이 파일은 이메일/비밀번호 회원가입 2단계 프로세스입니다.
-// 1단계: 이메일/비밀번호 설정 (IMG_7266 + IMG_7270 통합)
-// 2단계: 필수 정보 설정 (지역/성별)
+import '../auth/provider/auth_notifier.dart';
+// 💡 새로 만든 다이얼로그 Import
+import 'dialog/d_region_selection.dart';
 
 class EmailSignupScreen extends ConsumerStatefulWidget {
   const EmailSignupScreen({super.key});
@@ -23,21 +20,16 @@ class EmailSignupScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
-  // 상태 관리: 1단계 (이메일/비번) -> 2단계 (필수 정보)
   int _currentStep = 1;
-
-  // 폼 및 컨트롤러
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
-  // 최종 회원가입 정보
   String? _selectedRegion;
-  String? _selectedGender = 'Female'; // 기본값 여성
+  String _selectedGender = 'Female';
 
-  // 비밀번호 가시성 토글
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -50,163 +42,156 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(fontSize: 14.sp)),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.black87,
+      ),
+    );
   }
 
-  // --- 🎯 단계별 핸들러 ---
+  // --- 🎯 지역 선택 다이얼로그 호출 ---
+  Future<void> _showRegionDialog() async {
+    // 다이얼로그를 띄우고 결과를 기다림
+    final result = await showDialog<String>(
+      context: context,
+      routeSettings:  const RouteSettings(name: 'region_selection_dialog'),
+      builder: (context) => RegionSelectionDialog(initialRegion: _selectedRegion),
+    );
 
-  // 1단계 핸들러: 이메일/비밀번호 입력 후 2단계로 이동
-// 1단계 핸들러: 이메일/비밀번호 입력 후 2단계로 이동
-  Future<void> _handleEmailPasswordSubmit() async {
-    // 1. Form 유효성 검증
-    if (!_formKey.currentState!.validate()) return;
-
-    final email = _emailController.text.trim();
-
-    // 2. AuthNotifier의 로딩 상태를 사용하여 버튼 비활성화 (선택 사항)
-    final notifier = ref.read(authProvider.notifier);
-
-    try {
-      // 3. 🎯 이메일 중복 확인 (Firestore 기반)
-      final bool emailNotExists = await notifier.checkEmailAvailability(email);
-
-      if (emailNotExists) {
-        // 4. 입력 유효성 및 중복 검증 성공 시 2단계로 이동
-        setState(() {
-          _currentStep = 2;
-        });
-        _showMessage('회원가입에 필요한 필수 정보를 입력해주세요.');
-      }else{
-
-        final errorMsg = ref.read(authProvider).error;
-
-        // 중복되는 이메일이 발견된 경우
-        _showMessage(errorMsg ?? '시스템 오류');
-        return; // 다음 단계로 넘어가지 않습니다.
-
-      }
-
-    } catch (e) {
-      // 중복 확인 중 발생한 네트워크 등의 오류 처리
-      _showMessage('중복 확인 중 오류 발생: ${e.toString().split(':').last.trim()}');
-    } finally {
-      // 로딩 상태를 최종적으로 해제합니다.
-      notifier.state = notifier.state.copyWith(isLoading: false);
+    // 결과가 있으면 상태 업데이트
+    if (result != null) {
+      setState(() {
+        _selectedRegion = result;
+      });
     }
   }
 
-  // 2단계 핸들러: 최종 회원가입 (지역, 성별 설정)
-  Future<void> _handleFinalSignUp() async {
+  // --- 🎯 1단계 핸들러 ---
+  Future<void> _handleEmailPasswordSubmit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedRegion == null || _selectedGender == null) {
-      _showMessage('거주 지역과 성별을 선택해주세요.');
+
+    final email = _emailController.text.trim();
+    final notifier = ref.read(authProvider.notifier);
+
+    FocusScope.of(context).unfocus();
+
+    try {
+      final bool emailNotExists = await notifier.checkEmailAvailability(email);
+
+      if (emailNotExists) {
+        setState(() {
+          _currentStep = 2;
+        });
+      } else {
+        final errorMsg = ref.read(authProvider).error;
+        _showMessage(errorMsg ?? '이미 사용 중인 이메일입니다.');
+      }
+    } catch (e) {
+      _showMessage('중복 확인 중 오류 발생: ${e.toString().split(':').last.trim()}');
+    }
+  }
+
+  // --- 🎯 2단계 핸들러 ---
+  Future<void> _handleFinalSignUp() async {
+    if (_selectedRegion == null) {
+      _showMessage('거주 지역을 선택해주세요.');
       return;
     }
 
     try {
       final email = _emailController.text.trim();
-
       final password = _passwordController.text.trim();
 
-      // 최종 회원가입 및 Firestore 데이터 저장 로직 호출 (AuthNotifier)
       await ref.read(authProvider.notifier).signUp(
-            email,
-            password,
-            _selectedRegion!,
-            _selectedGender!,
-          );
+        email,
+        password,
+        _selectedRegion!,
+        _selectedGender,
+      );
 
-      // 성공 시 AuthGate에서 /home으로 리디렉션 처리됨
       if (context.mounted) {
-        context.go(HomeScreen.routeName); // AuthGate의 리디렉션 로직을 보조
+        context.go(HomeScreen.routeName);
       }
     } catch (e) {
-      // 에러 메시지 상세화
       _showMessage('회원가입 실패: ${e.toString().split(':').last.trim()}');
     }
   }
 
-  // --- 🎨 UI 빌더 ---
+  InputDecoration _buildInputDecoration({
+    required String hintText,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15.sp),
+      prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 22.sp),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      contentPadding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 16.w),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide(color: Colors.grey.shade200)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide(color: Colors.grey.shade200)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide(color: AppColor.primary, width: 1.5)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide(color: Colors.red.shade200)),
+      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
+    );
+  }
 
-  Widget _buildStep1( bool isLoading) {
-    // 이메일/비밀번호 입력
+  // --- 🏗️ 1단계 UI ---
+  Widget _buildStep1(bool isLoading) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 50.h),
-
-        // 이메일 입력 필드 (IMG_7266 참고)
-        Text('이메일', style: TextStyle(fontSize: 16.sp)),
-        TextFormField(
-          controller: _emailController,
-          decoration: InputDecoration(
-            hintText: '이메일을 입력해주세요.',
-            // IMG_7266 스타일을 참고하여 꽉 찬 배경색으로 설정
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          keyboardType: TextInputType.emailAddress,
-          validator: (v) =>
-              v!.isEmpty || !v.contains('@') ? '올바른 이메일 형식을 입력해주세요.' : null,
-        ),
+        SizedBox(height: 20.h),
+        Text('이메일로 시작하기 ✉️', style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold, color: Colors.black87)),
+        SizedBox(height: 8.h),
+        Text('로그인에 사용할 이메일과 비밀번호를 입력해주세요.', style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600)),
         SizedBox(height: 30.h),
 
-        // 비밀번호 설정 (IMG_7270 참고)
-        Text('비밀번호', style: TextStyle(fontSize: 16.sp)),
+        Text('이메일', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+        SizedBox(height: 8.h),
+        TextFormField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          style: TextStyle(fontSize: 16.sp),
+          decoration: _buildInputDecoration(hintText: 'example@email.com', icon: Icons.email_outlined),
+          validator: (v) => v!.isEmpty || !v.contains('@') ? '올바른 이메일 형식을 입력해주세요.' : null,
+        ),
+
+        SizedBox(height: 20.h),
+
+        Text('비밀번호', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+        SizedBox(height: 8.h),
         TextFormField(
           controller: _passwordController,
-          obscureText: !_isPasswordVisible, // 가시성 토글 적용
-          decoration: InputDecoration(
-            hintText: '비밀번호를 입력해주세요.',
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide.none,
-            ),
+          obscureText: !_isPasswordVisible,
+          style: TextStyle(fontSize: 16.sp),
+          decoration: _buildInputDecoration(
+            hintText: '6자 이상 입력해주세요',
+            icon: Icons.lock_outline_rounded,
             suffixIcon: IconButton(
-              icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey),
-              onPressed: () {
-                setState(() {
-                  _isPasswordVisible = !_isPasswordVisible;
-                });
-              },
+              icon: Icon(_isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded, color: Colors.grey),
+              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
             ),
           ),
           validator: (v) => v!.length < 6 ? '비밀번호는 6자 이상이어야 합니다.' : null,
         ),
+
         SizedBox(height: 12.h),
 
-        // 비밀번호 확인 (IMG_7270 참고)
         TextFormField(
           controller: _confirmPasswordController,
-          obscureText: !_isConfirmPasswordVisible, // 가시성 토글 적용
-          decoration: InputDecoration(
-            hintText: '비밀번호를 다시 한번 입력해주세요.',
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide.none,
-            ),
+          obscureText: !_isConfirmPasswordVisible,
+          style: TextStyle(fontSize: 16.sp),
+          decoration: _buildInputDecoration(
+            hintText: '비밀번호를 한 번 더 입력해주세요',
+            icon: Icons.check_circle_outline_rounded,
             suffixIcon: IconButton(
-              icon: Icon(
-                  _isConfirmPasswordVisible
-                      ? Icons.visibility
-                      : Icons.visibility_off,
-                  color: Colors.grey),
-              onPressed: () {
-                setState(() {
-                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                });
-              },
+              icon: Icon(_isConfirmPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded, color: Colors.grey),
+              onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
             ),
           ),
           validator: (v) {
@@ -215,54 +200,36 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
             return null;
           },
         ),
+
         SizedBox(height: 40.h),
 
-        // 다음 단계 버튼 (IMG_7266 참고)
         ElevatedButton(
           onPressed: isLoading ? null : _handleEmailPasswordSubmit,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColor.primary,
             foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 18.h),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r)),
-            // IMG_7266 버튼 스타일
+            minimumSize: Size(double.infinity, 56.h),
             elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
           ),
           child: isLoading
-              ? SizedBox(
-                  width: 20.w,
-                  height: 20.w,
-                  child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2.w))
-              : Text('다음 단계 (필수 정보 입력)', style: TextStyle(fontSize: 18.sp)),
+              ? SizedBox(width: 24.w, height: 24.w, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+              : Text('다음으로', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
         ),
+
         SizedBox(height: 20.h),
 
-        // 로그인 버튼
-        InkWell(
-          onTap: (){
-            context.goNamed(LoginScreen.routeName);
-          },
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 4.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '이미 회원이신가요?',
-                  style:
-                      TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
-                ),
-                SizedBox(width: 10.w),
-                Text(
-                  '로그인',
-                  style: TextStyle(
-                      fontSize: 12.sp,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold),
-                ),
-              ],
+        Center(
+          child: TextButton(
+            onPressed: () => context.goNamed(LoginScreen.routeName),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14.sp),
+                children: [
+                  const TextSpan(text: '이미 계정이 있으신가요?  '),
+                  TextSpan(text: '로그인', style: TextStyle(color: AppColor.primary, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
           ),
         ),
@@ -270,90 +237,139 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     );
   }
 
-  Widget _buildStep2( bool isLoading) {
-    // 지역/성별 설정 (최종 가입)
+  // --- 🏗️ 2단계 UI ---
+  Widget _buildStep2(bool isLoading) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 50.h),
-        Text('필수 정보 설정',
-            style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold)),
+        SizedBox(height: 20.h),
+        Text('마지막 단계입니다! 🎉', style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold, color: Colors.black87)),
+        SizedBox(height: 8.h),
+        Text('원활한 활동을 위해 필수 정보를 알려주세요.', style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600)),
         SizedBox(height: 30.h),
 
-        // 지역 선택
-        Text('거주 지역 선택 (투표 권한 설정)',
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        // 💡 지역 선택 (GestureDetector + 다이얼로그)
+        Text('거주 지역', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 8.h),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            hintText: '지역 선택',
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide.none,
+        GestureDetector(
+          onTap: _showRegionDialog, // 다이얼로그 호출
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on_outlined, color: _selectedRegion != null ? AppColor.primary : Colors.grey.shade400, size: 22.sp),
+                SizedBox(width: 12.w),
+                Text(
+                  _selectedRegion ?? '지역을 선택해주세요',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: _selectedRegion != null ? Colors.black87 : Colors.grey.shade400,
+                    fontWeight: _selectedRegion != null ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade600),
+              ],
             ),
           ),
-          value: _selectedRegion,
-          items: areasGlobalList
-              .map((region) => DropdownMenuItem(
-                    value: region,
-                    child: Text(region, style: TextStyle(fontSize: 16.sp)),
-                  ))
-              .toList(),
-          onChanged: (value) {
-            setState(() => _selectedRegion = value);
-          },
-          validator: (v) => v == null ? '지역을 선택해주세요' : null,
         ),
+
         SizedBox(height: 24.h),
 
-        // 성별 선택
-        Text('성별 (참가자격: 여성 필수)',
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        // 💡 성별 선택 (색상 분기)
+        Text('성별', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 8.h),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            hintText: '성별 선택',
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide.none,
+        Row(
+          children: [
+            Expanded(
+              child: _buildGenderButton(
+                label: '여성',
+                value: 'Female',
+                icon: Icons.female,
+                isSelected: _selectedGender == 'Female',
+                activeColor: AppColor.primary, // 🩷 핑크
+              ),
             ),
-          ),
-          value: _selectedGender,
-          items: const [
-            DropdownMenuItem(value: 'Female', child: Text('여성')),
-            DropdownMenuItem(value: 'Male', child: Text('남성')),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _buildGenderButton(
+                label: '남성',
+                value: 'Male',
+                icon: Icons.male,
+                isSelected: _selectedGender == 'Male',
+                activeColor: Colors.blueAccent, // 💙 블루 (요청 사항)
+              ),
+            ),
           ],
-          onChanged: (value) {
-            setState(() => _selectedGender = value);
-          },
-          validator: (v) => v == null ? '성별을 선택해주세요' : null,
         ),
+
         SizedBox(height: 40.h),
 
-        // 최종 확인 버튼 (IMG_7270의 '확인' 버튼 스타일 참고)
+        // 가입 완료 버튼
         ElevatedButton(
           onPressed: isLoading ? null : _handleFinalSignUp,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColor.primary,
             foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 18.h),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r)),
+            minimumSize: Size(double.infinity, 56.h),
             elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
           ),
           child: isLoading
-              ? SizedBox(
-                  width: 20.w,
-                  height: 20.w,
-                  child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2.w))
-              : Text('가입 완료 및 시작', style: TextStyle(fontSize: 18.sp)),
+              ? SizedBox(width: 24.w, height: 24.w, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+              : Text('가입 완료하기', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
         ),
       ],
+    );
+  }
+
+  // 🎨 성별 선택 버튼 빌더 (activeColor 추가)
+  Widget _buildGenderButton({
+    required String label,
+    required String value,
+    required IconData icon,
+    required bool isSelected,
+    required Color activeColor, // 💡 활성화 색상 인자 추가
+  }) {
+    final color = isSelected ? activeColor : Colors.grey.shade200;
+    final textColor = isSelected ? Colors.white : Colors.grey.shade600;
+    final borderColor = isSelected ? activeColor : Colors.grey.shade300;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedGender = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: borderColor, width: 1.5),
+          // 선택 시 약간의 그림자
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: activeColor.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ] : [],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20.sp, color: textColor),
+            SizedBox(width: 8.w),
+            Text(
+              label,
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: textColor),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -362,33 +378,74 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        // 단계 제목 업데이트
-        title: Text(_currentStep == 1 ? '이메일로 가입' : '필수 정보 설정'),
-        elevation: 0,
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () {
+            if (_currentStep == 2) {
+              setState(() => _currentStep = 1);
+            } else {
+              context.pop();
+            }
+          },
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildStepIndicator(1),
+            SizedBox(width: 4.w),
+            Container(width: 20.w, height: 2.h, color: Colors.grey.shade300),
+            SizedBox(width: 4.w),
+            _buildStepIndicator(2),
+          ],
+        ),
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 32.0.w, vertical: 20.0.h),
-        child: Form(
-          key: _formKey,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _currentStep == 1
-                ? _buildStep1( authState.isLoading)
-                : _buildStep2(authState.isLoading),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Form(
+            key: _formKey,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: _currentStep == 1
+                  ? _buildStep1(authState.isLoading)
+                  : _buildStep2(authState.isLoading),
+            ),
           ),
         ),
       ),
-      // 에러 메시지 표시
-      bottomNavigationBar: authState.error != null
-          ? Container(
-              padding: EdgeInsets.all(16.w),
-              color: Colors.red.shade50,
-              child: Text('시스템: ${authState.error!}',
-                  style: TextStyle(color: Colors.red, fontSize: 14.sp)),
-            )
-          : null,
+    );
+  }
+
+  Widget _buildStepIndicator(int step) {
+    final isActive = _currentStep >= step;
+    return Container(
+      width: 24.w,
+      height: 24.w,
+      decoration: BoxDecoration(
+        color: isActive ? AppColor.primary : Colors.grey.shade200,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          '$step',
+          style: TextStyle(
+            color: isActive ? Colors.white : Colors.grey.shade500,
+            fontWeight: FontWeight.bold,
+            fontSize: 12.sp,
+          ),
+        ),
+      ),
     );
   }
 }
