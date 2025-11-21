@@ -151,7 +151,6 @@ class EntryRepository {
       // Firestore가 ID를 할당할 예정
       userId: userId,
       regionCity: regionCity,
-      photoUrl: photoUrl,
       thumbnailUrl: thumbnailUrl,
       snsId: snsId,
       snsUrl: snsUrl,
@@ -197,17 +196,9 @@ class EntryRepository {
 
     // 2. Storage 사진 삭제
     try {
-      // photoUrl에서 Storage 경로(Reference)를 추출하여 삭제합니다.
-      final photoRef = _storage.refFromURL(entry.photoUrl);
-      await photoRef.delete();
-      debugPrint('$methodName: [성공] Storage 사진 삭제 완료. URL: ${entry.photoUrl}');
-
-      // 썸네일 URL이 다르다면 썸네일도 삭제
-      if (entry.thumbnailUrl != entry.photoUrl) {
-        final thumbRef = _storage.refFromURL(entry.thumbnailUrl);
-        await thumbRef.delete();
-        debugPrint('$methodName: [성공] Storage 썸네일 삭제 완료.');
-      }
+      final thumbRef = _storage.refFromURL(entry.thumbnailUrl);
+      await thumbRef.delete();
+      debugPrint('$methodName: [성공] Storage 썸네일 삭제 완료.');
     } catch (e) {
       // 사진이 이미 삭제되었을 수도 있으므로, 오류가 발생해도 플로우는 계속 진행
       debugPrint('$methodName: [실패] Storage 사진 삭제 실패: $e');

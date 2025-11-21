@@ -93,7 +93,7 @@ class WEntryStatusView extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(12.w),
           child: Image.network(
-            entry.photoUrl,
+            entry.thumbnailUrl,
             height: 300.h,
             fit: BoxFit.cover,
             width: double.infinity,

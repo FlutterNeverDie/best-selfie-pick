@@ -139,7 +139,7 @@ class WEntryApprovedView extends ConsumerWidget {
               // 1. 이미지: Positioned.fill로 꽉 채웁니다.
               Positioned.fill(
                 child: WCachedImage(
-                  imageUrl: entry.photoUrl,
+                  imageUrl: entry.thumbnailUrl,
                   fit: BoxFit.cover,
                 ),
               ),

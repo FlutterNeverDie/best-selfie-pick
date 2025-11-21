@@ -54,9 +54,8 @@ class WCandidateItem extends ConsumerWidget {
             children: [
               // 1. 이미지
               WCachedImage(
-                imageUrl: candidate.thumbnailUrl.isNotEmpty
-                    ? candidate.thumbnailUrl
-                    : candidate.photoUrl,
+                imageUrl:
+                    candidate.thumbnailUrl,
                 fit: BoxFit.cover,
               ),
 

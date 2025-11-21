@@ -71,7 +71,7 @@ class _WEntryPendingViewState extends ConsumerState<WEntryPendingView> with Sing
                   children: [
                     // Layer 1: 배경 이미지
                     WCachedImage(
-                      imageUrl: widget.entry.photoUrl, // widget.entry로 접근
+                      imageUrl: widget.entry.thumbnailUrl, // widget.entry로 접근
                       fit: BoxFit.cover,
                     ),
 

@@ -7,7 +7,6 @@ class EntryModel {
   final String userId;
   final String regionCity; // 참가 지역
   final String weekKey; // 참가 회차
-  final String photoUrl;
   final String thumbnailUrl;
   final String snsId;
   final String snsUrl;
@@ -25,7 +24,6 @@ class EntryModel {
     required this.userId,
     required this.regionCity,
     required this.weekKey,
-    required this.photoUrl,
     required this.thumbnailUrl,
     required this.snsId,
     this.snsUrl = '',
@@ -44,7 +42,6 @@ class EntryModel {
       userId: map['userId'] as String? ?? '',
       regionCity: map['regionCity'] as String? ?? '',
       weekKey: map['weekKey'] as String? ?? '',
-      photoUrl: map['photoUrl'] as String? ?? '',
       thumbnailUrl: map['thumbnailUrl'] as String? ?? '',
       snsId: map['snsId'] as String? ?? '',
       snsUrl: map['snsUrl'] as String? ?? '',
@@ -63,7 +60,6 @@ class EntryModel {
       'userId': userId,
       'regionCity': regionCity,
       'weekKey': weekKey,
-      'photoUrl': photoUrl,
       'thumbnailUrl': thumbnailUrl,
       'snsId': snsId,
       'snsUrl': snsUrl,
@@ -98,7 +94,6 @@ class EntryModel {
       userId: userId ?? this.userId,
       regionCity: regionCity ?? this.regionCity,
       weekKey: weekKey ?? this.weekKey,
-      photoUrl: photoUrl ?? this.photoUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       snsId: snsId ?? this.snsId,
       snsUrl: snsUrl ?? this.snsUrl,
@@ -113,6 +108,6 @@ class EntryModel {
 
   @override
   String toString() {
-    return 'EntryModel(entryId: $entryId, userId: $userId, regionCity: $regionCity, weekKey: $weekKey, photoUrl: $photoUrl, thumbnailUrl: $thumbnailUrl, snsId: $snsId, createdAt: $createdAt, status: $status, goldVotes: $goldVotes, silverVotes: $silverVotes, bronzeVotes: $bronzeVotes, totalScore: $totalScore)';
+    return 'EntryModel(entryId: $entryId, userId: $userId, regionCity: $regionCity, weekKey: $weekKey,  thumbnailUrl: $thumbnailUrl, snsId: $snsId, createdAt: $createdAt, status: $status, goldVotes: $goldVotes, silverVotes: $silverVotes, bronzeVotes: $bronzeVotes, totalScore: $totalScore)';
   }
 }

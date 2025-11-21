@@ -94,7 +94,7 @@ class WRankingListView extends ConsumerWidget {
             // Section 2: 나머지 참가자 (위클리 라인업)
             // ----------------------------------------------------
             if (challengers.isNotEmpty) ...[
-              SizedBox(height: 36.h), // 섹션 간격 확보
+              SizedBox(height: 12.h), // 섹션 간격 확보
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
                 child: Row(

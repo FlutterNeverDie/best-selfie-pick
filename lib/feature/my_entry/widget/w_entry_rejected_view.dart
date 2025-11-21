@@ -43,7 +43,7 @@ class WEntryRejectedView extends ConsumerWidget {
                         BlendMode.saturation, // 채도 0
                       ),
                       child: WCachedImage(
-                        imageUrl: entry.photoUrl,
+                        imageUrl: entry.thumbnailUrl,
                         fit: BoxFit.cover,
                       ),
                     ),

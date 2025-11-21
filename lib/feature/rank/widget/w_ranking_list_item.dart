@@ -4,9 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
-import 'package:selfie_pick/core/theme/colors/app_color.dart';
 
-import '../../../shared/service/uri_service.dart';
+import '../provider/dialog/d_ranking_image_detail.dart';
+
 class WRankingListItem extends StatelessWidget {
   final EntryModel entry;
   final int rank;
@@ -28,6 +28,7 @@ class WRankingListItem extends StatelessWidget {
 
   bool get isTopThree => rank <= 3;
 
+  // 📋 ID 복사
   void _copySnsId(BuildContext context) {
     Clipboard.setData(ClipboardData(text: '@${entry.snsId}')).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -40,10 +41,19 @@ class WRankingListItem extends StatelessWidget {
     });
   }
 
+  // 🔍 [수정됨] 외부 파일로 뺀 다이얼로그 호출
+  void _showFullScreenDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      // 💡 딤(Dim) 투명도 조절: 0.8 (너무 어둡지 않게)
+      barrierColor: Colors.black.withOpacity(0.8),
+      builder: (context) => RankingImageDetailDialog(entry: entry),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final rankColor = _getRankColor();
-
     final double verticalPadding = isTopThree ? 16.h : 12.h;
     final double avatarSize = isTopThree ? 56.w : 44.w;
 
@@ -67,30 +77,14 @@ class WRankingListItem extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16.w),
-          // 롱프레스 시: ID 복사
-          onLongPress: () => _copySnsId(context),
-          // 💡 [수정됨] 탭 시: SNS URL로 이동
-          onTap: () {
-            // snsUrl이 비어있으면 아무 동작 안 하거나 토스트 메시지를 띄울 수도 있습니다.
-            // UrlLauncherUtil 내부에서 null 체크를 하므로 바로 호출해도 안전합니다.
-            if (entry.snsUrl.isNotEmpty) {
-              UrlLauncherUtil.launch(entry.snsUrl);
-            } else {
-              // (선택 사항) URL이 없을 경우 안내 메시지
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('등록된 링크가 없습니다.', style: TextStyle(fontSize: 14.sp)),
-                  duration: const Duration(seconds: 1),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          },
+          // 💡 탭하면 다이얼로그 호출
+          onTap: () => _showFullScreenDialog(context),
+
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: verticalPadding),
             child: Row(
               children: [
-                // 1. 순위 표시
+                // 1. 순위
                 SizedBox(
                   width: 30.w,
                   child: Center(
@@ -101,7 +95,7 @@ class WRankingListItem extends StatelessWidget {
                 ),
                 SizedBox(width: 12.w),
 
-                // 2. 프로필 사진
+                // 2. 사진
                 Container(
                   width: avatarSize,
                   height: avatarSize,
@@ -125,7 +119,7 @@ class WRankingListItem extends StatelessWidget {
                 ),
                 SizedBox(width: 16.w),
 
-                // 3. SNS ID (Shimmer 효과)
+                // 3. SNS ID
                 Expanded(
                   child: isTopThree
                       ? Shimmer.fromColors(
@@ -155,8 +149,19 @@ class WRankingListItem extends StatelessWidget {
                   ),
                 ),
 
-                // 4. 우측 화살표
-                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade300, size: 24.w),
+                // 4. 💡 우측 아이콘: 복사 기능 (InkWell로 감싸서 독립 터치)
+                InkWell(
+                  onTap: () => _copySnsId(context),
+                  borderRadius: BorderRadius.circular(20.w),
+                  child: Padding(
+                    padding: EdgeInsets.all(8.w),
+                    child: Icon(
+                        Icons.content_copy_rounded, // 클립보드 아이콘
+                        color: Colors.grey.shade400,
+                        size: 20.w
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
