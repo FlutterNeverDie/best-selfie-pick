@@ -62,6 +62,7 @@ class MyEntryScreen extends ConsumerWidget {
     return Padding(
       padding: EdgeInsets.only(right: 12.w),
       child: PopupMenuButton<String>(
+        routeSettings: const RouteSettings(name: 'entry_status_menu'),
         // 🎨 메뉴 팝업 스타일링
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.2),
