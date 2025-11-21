@@ -1,76 +1,134 @@
-// lib/feature/ranking/widget/w_candidate_item.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
-import 'package:selfie_pick/core/theme/colors/app_color.dart';
-
-import '../provider/vote_provider.dart';
+import 'package:selfie_pick/feature/rank/provider/vote_provider.dart';
+import '../../../shared/widget/w_cached_image.dart';
 
 class WCandidateItem extends ConsumerWidget {
   final EntryModel candidate;
 
-  const WCandidateItem({
-    super.key,
-    required this.candidate,
-  });
+  const WCandidateItem({super.key, required this.candidate});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 💡 선택 상태 감지
-    final isSelected = ref.watch(voteProvider.select(
-          (state) => state.selectedPicks.contains(candidate),
-    ));
-    final notifier = ref.read(voteProvider.notifier);
+    final selectedPicks = ref.watch(voteProvider.select((s) => s.selectedPicks));
+    final int selectedIndex = selectedPicks.indexWhere((e) => e.entryId == candidate.entryId);
+    final bool isSelected = selectedIndex != -1;
 
-    // 💡 선택 시 배경 색상 및 테두리 효과
-    final itemColor = isSelected ? AppColor.primary.withOpacity(0.8) : Colors.white;
+    Color borderColor = Colors.transparent;
+
+    // 💡 아이콘은 모두 'emoji_events'로 통일
+    const IconData badgeIcon = Icons.emoji_events;
+
+    if (isSelected) {
+      if (selectedIndex == 0) {
+        borderColor = const Color(0xFFFFD700); // Gold
+      } else if (selectedIndex == 1) {
+        borderColor = const Color(0xFFC0C0C0); // Silver
+      } else if (selectedIndex == 2) {
+        borderColor = const Color(0xFFCD7F32); // Bronze
+      }
+    }
 
     return GestureDetector(
       onTap: () {
-        notifier.toggleCandidatePick(candidate);
+        ref.read(voteProvider.notifier).togglePick(candidate);
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: itemColor,
-          borderRadius: BorderRadius.circular(8.w),
+          borderRadius: BorderRadius.circular(12.w),
+          border: Border.all(
+            color: isSelected ? borderColor : Colors.grey.shade200,
+            width: isSelected ? 3.w : 1.w,
+          ),
           boxShadow: isSelected
-              ? [BoxShadow(color: AppColor.primary.withOpacity(0.4), blurRadius: 4.w)]
-              : null,
+              ? [BoxShadow(color: borderColor.withOpacity(0.4), blurRadius: 8, spreadRadius: 1)]
+              : [],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 💡 후보 이미지 (Placeholder 사용)
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8.w)),
-                child: Image.network(
-                  candidate.thumbnailUrl, // EntryModel의 썸네일 URL 사용
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Center(child: Icon(Icons.person, size: 40.w)),
-                ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(9.w),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 1. 이미지
+              WCachedImage(
+                imageUrl: candidate.thumbnailUrl.isNotEmpty
+                    ? candidate.thumbnailUrl
+                    : candidate.photoUrl,
+                fit: BoxFit.cover,
               ),
-            ),
 
-            // 💡 SNS ID
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
-              child: Text(
-                '@${candidate.snsId}',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.black,
+              // 2. 선택 시 오버레이
+              if (isSelected)
+                Container(color: borderColor.withOpacity(0.2)),
+
+              // 3. 하단 그라데이션
+              Positioned(
+                bottom: 0, left: 0, right: 0, height: 40.h,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                    ),
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+
+              // 4. SNS ID
+              Positioned(
+                bottom: 8.h, left: 8.w, right: 8.w,
+                child: Text(
+                  '@${candidate.snsId}',
+                  style: TextStyle(
+                    color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600,
+                    shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+                  ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              // 5. 🥇 순위 뱃지 (통일된 아이콘 + 순위별 색상)
+              if (isSelected)
+                Positioned(
+                  top: 8.h, right: 8.w,
+                  child: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4.w)],
+                    ),
+                    child: Icon(
+                      badgeIcon, // 💡 통일된 아이콘
+                      color: borderColor, // 💡 순위별 색상 적용
+                      size: 20.w,
+                    ),
+                  ),
+                ),
+
+              // 6. 번호 표시
+              if (isSelected)
+                Positioned(
+                  top: 8.h, left: 8.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                        color: borderColor,
+                        borderRadius: BorderRadius.circular(12.w),
+                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2.w)]
+                    ),
+                    child: Text(
+                      '${selectedIndex + 1}',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.sp),
+                    ),
+                  ),
+                )
+            ],
+          ),
         ),
       ),
     );

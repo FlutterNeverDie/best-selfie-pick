@@ -161,7 +161,7 @@ class VoteNotifier extends Notifier<VotingStatus> {
   // ====================================================================
 
   /// 후보를 금/은/동 투표 목록에 추가하거나 제거합니다.
-  void toggleCandidatePick(EntryModel candidate) {
+  void togglePick(EntryModel candidate) {
     if (state.isVoted) return;
 
     final currentPicks = List<EntryModel>.from(state.selectedPicks);

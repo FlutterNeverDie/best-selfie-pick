@@ -1,82 +1,108 @@
-// lib/feature/ranking/widget/w_voting_overlay.dart (수정)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
-
 import '../provider/vote_provider.dart';
 
 class WVotingOverlay extends ConsumerWidget {
-
-  const WVotingOverlay({super.key}); // 💡 생성자에서 notifier 제거
+  const WVotingOverlay({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 💡 build 내부에서 VoteNotifier에 직접 접근
     final notifier = ref.read(voteProvider.notifier);
-
-    // 💡 투표 상태 감시
     final selectedPicks = ref.watch(voteProvider.select((state) => state.selectedPicks));
     final isSubmitReady = selectedPicks.length == VoteNotifier.MAX_PICKS;
 
     return Container(
-      height: 120.h,
+      // 💡 높이를 고정하지 않고 내부 컨텐츠 + 패딩으로 결정 (유연성 확보)
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10.w)],
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.w)), // 라운딩 조금 더 줌
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, -2))
+        ],
       ),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 10.h), // 💡 패딩 넉넉하게 조정
       child: Column(
+        mainAxisSize: MainAxisSize.min, // 내용물만큼만 높이 차지
         children: [
-          SizedBox(height: 10),
-          // 1. 금/은/동 선택 현황 (유지)
+          // 1. 🥇🥈🥉 슬롯
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(VoteNotifier.MAX_PICKS, (index) {
               final isPicked = index < selectedPicks.length;
-              final label = index == 0 ? 'GOLD' : (index == 1 ? 'SILVER' : 'BRONZE');
 
-              return Container(
-                width: 85.w,
-                height: 30.h,
-                decoration: BoxDecoration(
-                  color: isPicked ? AppColor.primary.withOpacity(0.1) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(4.w),
-                  border: Border.all(
-                      color: isPicked ? AppColor.primary : Colors.grey.shade300,
-                      width: 1.w
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    isPicked ? selectedPicks[index].snsId : label,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: isPicked ? AppColor.primary : Colors.grey.shade500,
-                      fontWeight: isPicked ? FontWeight.bold : FontWeight.normal,
+              Color slotColor;
+              String label;
+              // 💡 아이콘 통일
+              const IconData icon = Icons.emoji_events;
+
+              if (index == 0) {
+                slotColor = const Color(0xFFFFD700);
+                label = '1st';
+              } else if (index == 1) {
+                slotColor = const Color(0xFFC0C0C0);
+                label = '2nd';
+              } else {
+                slotColor = const Color(0xFFCD7F32);
+                label = '3rd';
+              }
+
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 4.w),
+                  height: 44.h, // 슬롯 높이 살짝 키움
+                  decoration: BoxDecoration(
+                    color: isPicked ? slotColor.withOpacity(0.15) : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(10.w),
+                    border: Border.all(
+                        color: isPicked ? slotColor : Colors.grey.shade300,
+                        width: 1.5.w
                     ),
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, size: 18.w, color: isPicked ? slotColor : Colors.grey.shade400),
+                      SizedBox(width: 4.w),
+                      Flexible(
+                        child: Text(
+                          isPicked ? selectedPicks[index].snsId : label,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: isPicked ? FontWeight.bold : FontWeight.w500,
+                            color: isPicked ? Colors.black87 : Colors.grey.shade400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
             }),
           ),
-          SizedBox(height: 8.h),
 
-          // 2. 투표 제출 버튼
+          // 💡 2. 간격 벌리기 (요청하신 부분)
+          SizedBox(height: 10.h),
+
+          // 3. 제출 버튼
           ElevatedButton(
-            onPressed: isSubmitReady ? () => notifier.submitPicks() : null, // 💡 notifier 사용
+            onPressed: isSubmitReady ? () => notifier.submitPicks() : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: isSubmitReady ? AppColor.primary : Colors.grey,
-              minimumSize: Size(double.infinity, 36.h),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.w)),
+              backgroundColor: AppColor.primary,
+              disabledBackgroundColor: Colors.grey.shade300,
+              foregroundColor: Colors.white,
+              minimumSize: Size(double.infinity, 50.h), // 버튼 높이도 살짝 키움
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.w)),
             ),
             child: Text(
-              '베스트 픽 제출 (${selectedPicks.length}/${VoteNotifier.MAX_PICKS})',
-              style: TextStyle(fontSize: 16.sp, color: Colors.white),
+              isSubmitReady
+                  ? '투표 완료하기'
+                  : '${VoteNotifier.MAX_PICKS - selectedPicks.length}명을 더 선택해주세요',
+              style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.bold),
             ),
           ),
         ],
