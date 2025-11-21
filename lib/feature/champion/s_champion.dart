@@ -1,103 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:selfie_pick/feature/rank/provider/vote_provider.dart';
-import '../../core/theme/colors/app_color.dart';
-import '../auth/provider/auth_notifier.dart';
-import '../champion/widget/w_champion_ranking.dart';
+import 'package:selfie_pick/core/theme/colors/app_color.dart';
+import 'package:selfie_pick/feature/champion/provider/champion_provider.dart';
+import 'package:selfie_pick/feature/champion/provider/state/champion.state.dart';
+
+// 💡 분리된 위젯 Import
+import 'widget/w_champion_podium.dart';
+import 'widget/w_no_champion_message.dart';
 
 
 class ChampionScreen extends ConsumerWidget {
-  static const String routeName = '/ChampionScreen';
   const ChampionScreen({super.key});
 
-  // 새로고침 로직
+  // 💡 [수정] 새로고침 로직: Notifier의 로드 함수를 직접 호출
   Future<void> _onRefresh(WidgetRef ref) async {
-    // VoteNotifier를 재빌드하여 투표 완료 여부 및 후보 목록을 새로 로드합니다.
-    ref.invalidate(voteProvider);
-    await ref.read(voteProvider.notifier).loadCandidates();
+    // build 내부에서 이미 필요한 인자를 가져오고 있으므로,
+    // 여기서는 Notifier를 invalidate하고 재빌드하여 로드를 트리거합니다.
+    ref.invalidate(championProvider);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 💡 1. 상태 참조 오류 수정: voteState로 통일
-    final voteState = ref.watch(voteProvider);
-
-    // 로딩 상태를 확인합니다. (최초 로딩 또는 투표 제출 중)
-    final isLoading = voteState.candidates.isEmpty &&
-        voteState.hasMorePages &&
-        !voteState.isVoted;
-    final isSubmitting = voteState.isSubmitting;
-
-
-    // 💡 2. 로딩 중일 때 전체 로딩 화면 표시
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColor.primary));
-    }
-
+    // 💡 [수정] ChampionNotifier의 상태를 직접 감시
+    final state = ref.watch(championProvider);
 
     return Scaffold(
-      backgroundColor: AppColor.safeBackground,
+      backgroundColor: Colors.grey.shade50, // 배경색 통일
       appBar: AppBar(
-        // 💡 2. AppBar 구조 오류 수정: title 속성에 Text 위젯 할당
-        title: Text(
-          '명예의 전당',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
+        title: const Text('챔피언', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+      ),
+      // 💡 [수정] RefreshIndicator는 ChampionScreen 전체를 감싸는 것이 더 적절합니다.
+      body: RefreshIndicator(
+        onRefresh: () => _onRefresh(ref),
+        color: AppColor.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              // 스크롤 뷰가 화면을 꽉 채우도록 설정 (당겨서 새로고침을 위해 필수)
+              minHeight: MediaQuery.of(context).size.height -
+                  AppBar().preferredSize.height - MediaQuery.of(context).padding.top,
+            ),
+            child: _buildBody(state),
           ),
         ),
-        backgroundColor: AppColor.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
+    );
+  }
 
-      body: Stack(
-        children: [
-          // 1. 메인 콘텐츠 (RefreshIndicator 적용)
-          RefreshIndicator(
-            onRefresh: () => _onRefresh(ref),
-            color: AppColor.primary,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - AppBar().preferredSize.height - MediaQuery.of(context).padding.top,
-                ),
-                child: Builder(
-                  builder: (context) {
-                    // 2. 투표 완료 여부에 따른 분기
-                    if (voteState.isVoted) {
-                      // 투표 완료 시: 랭킹 결과 화면
-                      return WChampionRanking(
-                      );
-                    } else {
-                      // 투표 미완료 시: 투표 진행 화면 (스와이프 UX)
-                      // 💡 WRankingVotingView는 아직 구현되지 않았으므로 임시 Container로 대체
-                      return const Center(child: Text("투표 진행 화면 (W_VOTING_VIEW)"));
-                    }
-                  },
-                ),
-              ),
-            ),
+  // 💡 [신규] 상태별 UI 분기 메서드
+  Widget _buildBody(ChampionState state) {
+    // 1. 로딩 상태
+    if (state.isLoading) {
+      return Center(
+          child: Padding(
+              padding: EdgeInsets.only(top: 100.h), // 상단에서 너무 붙지 않게 여백
+              child: CircularProgressIndicator(color: AppColor.primary)
+          )
+      );
+    }
+
+    // 2. 에러 상태
+    if (state.error != null) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.w),
+          child: Text(
+            state.error!,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.red, fontSize: 16.sp),
           ),
+        ),
+      );
+    }
 
-          // 3. 투표 제출 중 로딩 오버레이
-          if (isSubmitting)
-            Container(
-              color: Colors.black54,
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: AppColor.white),
-                  SizedBox(height: 20.h),
-                  Text('투표 제출 중...', style: TextStyle(color: AppColor.white, fontSize: 18.sp)),
-                ],
-              ),
-            ),
-        ],
-      ),
+    // 3. 데이터 없음 상태 (Empty State)
+    if (state.champions.isEmpty) {
+      return const WNoChampionMessage();
+    }
+
+    // 4. 데이터 있음 상태 (Podium)
+    return Padding(
+      padding: EdgeInsets.only(bottom: 50.h),
+      child: WChampionPodium(champions: state.champions),
     );
   }
 }
