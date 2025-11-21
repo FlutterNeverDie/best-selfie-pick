@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/feature/rank/widget/w_ranking_list_item.dart';
+import 'package:text_gradiate/text_gradiate.dart';
 
 import '../provider/vote_provider.dart';
 
@@ -42,13 +43,58 @@ class WRankingListView extends ConsumerWidget {
             // ----------------------------------------------------
             Padding(
               padding: EdgeInsets.only(top: 16.h, left: 16.w, right: 16.w, bottom: 12.h),
-              child: Text(
-                '명예의 전당 (실시간 순위 🔥)',
-                style: TextStyle(
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.pinkAccent.shade700
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center, // 수직 중앙 정렬
+                children: [
+                  // 1. 텍스트 부분 (그라데이션 적용 ✨)
+                  TextGradiate(
+                    text: Text(
+                      '명예의 전당 (실시간 순위 ', // 🔥 제외
+                      style: TextStyle(
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    colors: [
+                      Colors.pinkAccent.shade700,
+                      Colors.purpleAccent,
+                      Colors.deepPurpleAccent,
+                    ],
+                    gradientType: GradientType.linear,
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    tileMode: TileMode.clamp,
+                  ),
+
+                  // 2. 이모지 부분 (원본 색상 유지 🔥)
+                  Text(
+                    '🔥', // 괄호 닫기와 이모지
+                    style: TextStyle(
+                      fontSize: 22.sp, // 앞 텍스트와 사이즈 맞춤
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black, // 괄호는 검정색 (또는 원하시는 색)
+                    ),
+                  ),
+
+                  TextGradiate(
+                    text: Text(
+                      ')', // 괄호 닫기
+                      style: TextStyle(
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    colors: [
+                      Colors.pinkAccent.shade700,
+                      Colors.purpleAccent,
+                      Colors.deepPurpleAccent,
+                    ],
+                    gradientType: GradientType.linear,
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    tileMode: TileMode.clamp,
+                  ),
+                ],
               ),
             ),
 
@@ -81,7 +127,7 @@ class WRankingListView extends ConsumerWidget {
                       style: TextStyle(
                           fontSize: 20.sp,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey.shade700
+                          color: Colors.pinkAccent.shade700
                       ),
                     ),
                   ),

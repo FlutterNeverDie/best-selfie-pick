@@ -1,12 +1,11 @@
-// w_ranking_list_item.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart'; // 📦 Shimmer 패키지 import
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 
-/// 🎨 각 랭킹 아이템을 나타내는 재사용 가능한 StatelessWidget
 class WRankingListItem extends StatelessWidget {
   final EntryModel entry;
   final int rank;
@@ -59,7 +58,6 @@ class WRankingListItem extends StatelessWidget {
     final double medalSize = isTopThree ? (isFirst ? 22.w : 18.w) : 0;
     final double fontSizeSns = isTopThree ? 18.sp : 15.sp; // 폰트 크기 축소
 
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
@@ -97,7 +95,7 @@ class WRankingListItem extends StatelessWidget {
                 ),
                 SizedBox(width: 16.w),
 
-                // 2. 👤 SNS ID
+                // 2. 👤 SNS ID (Shimmer 적용됨)
                 Expanded(
                   child: _SnsIdText(
                     snsId: entry.snsId,
@@ -127,7 +125,7 @@ class WRankingListItem extends StatelessWidget {
   }
 }
 
-/// 💡 일반 Text를 사용하는 SNS ID 위젯 (SelectableText 복원)
+/// 💡 Shimmer 효과를 조건부로 적용한 SNS ID 위젯
 class _SnsIdText extends StatelessWidget {
   final String snsId;
   final double fontSize;
@@ -142,7 +140,8 @@ class _SnsIdText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
+    // 1. 기본 텍스트 위젯 생성 (DRY 원칙)
+    final textWidget = Text(
       "@$snsId",
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -152,10 +151,24 @@ class _SnsIdText extends StatelessWidget {
         color: Colors.black87,
       ),
     );
+
+    // 2. 1~3위(Top 3)일 경우 Shimmer 감싸기
+    if (isTopThree) {
+      return Shimmer.fromColors(
+        // 텍스트가 검정색이므로, 하이라이트를 옅은 회색/흰색 계열로 주어 빛나는 금속 느낌을 냄
+        baseColor: Colors.black87,
+        highlightColor: Colors.grey.shade400,
+        period: const Duration(milliseconds: 2000), // 2초 주기로 반복
+        child: textWidget,
+      );
+    }
+
+    // 3. 그 외(4위 이하)는 일반 텍스트 반환
+    return textWidget;
   }
 }
 
-// _ProfileThumbnail은 변경 없이 그대로 유지됩니다.
+// _ProfileThumbnail은 변경 없이 그대로 유지
 class _ProfileThumbnail extends StatelessWidget {
   final EntryModel entry;
   final Color rankColor;
@@ -200,7 +213,6 @@ class _ProfileThumbnail extends StatelessWidget {
           ),
         ),
 
-        // 💡 트로피 메달 오버레이 (1~3위만)
         if (isTopThree)
           Positioned(
             bottom: 0,
