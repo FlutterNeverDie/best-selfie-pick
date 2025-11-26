@@ -25,7 +25,8 @@ class WRankingListView extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.emoji_events_outlined, size: 60.w, color: Colors.grey.shade300),
+            Icon(Icons.emoji_events_outlined,
+                size: 60.w, color: Colors.grey.shade300),
             SizedBox(height: 16.h),
             Text(
               "아직 집계된 랭킹이 없습니다.",
@@ -60,8 +61,7 @@ class WRankingListView extends ConsumerWidget {
             ),
 
             // 3. 시상대 위젯 (타이머 포함)
-            if (topThree.isNotEmpty)
-              WRankingTopPodium(topThree: topThree),
+            if (topThree.isNotEmpty) WRankingTopPodium(topThree: topThree),
 
             // 4. 나머지 참가자 섹션
             if (challengers.isNotEmpty) ...[

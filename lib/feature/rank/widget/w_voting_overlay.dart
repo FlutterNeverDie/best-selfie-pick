@@ -19,7 +19,10 @@ class WVotingOverlay extends ConsumerWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.w)), // 라운딩 조금 더 줌
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, -2))
+          BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, -2))
         ],
       ),
       padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 10.h), // 💡 패딩 넉넉하게 조정
@@ -53,25 +56,31 @@ class WVotingOverlay extends ConsumerWidget {
                   margin: EdgeInsets.symmetric(horizontal: 4.w),
                   height: 44.h, // 슬롯 높이 살짝 키움
                   decoration: BoxDecoration(
-                    color: isPicked ? slotColor.withOpacity(0.15) : Colors.grey.shade50,
+                    color: isPicked
+                        ? slotColor.withOpacity(0.15)
+                        : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(10.w),
                     border: Border.all(
                         color: isPicked ? slotColor : Colors.grey.shade300,
-                        width: 1.5.w
-                    ),
+                        width: 1.5.w),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(icon, size: 18.w, color: isPicked ? slotColor : Colors.grey.shade400),
+                      Icon(icon,
+                          size: 18.w,
+                          color: isPicked ? slotColor : Colors.grey.shade400),
                       SizedBox(width: 4.w),
                       Flexible(
                         child: Text(
                           isPicked ? selectedPicks[index].snsId : label,
                           style: TextStyle(
                             fontSize: 13.sp,
-                            fontWeight: isPicked ? FontWeight.bold : FontWeight.w500,
-                            color: isPicked ? Colors.black87 : Colors.grey.shade400,
+                            fontWeight:
+                            isPicked ? FontWeight.bold : FontWeight.w500,
+                            color: isPicked
+                                ? Colors.black87
+                                : Colors.grey.shade400,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -96,17 +105,64 @@ class WVotingOverlay extends ConsumerWidget {
               foregroundColor: Colors.white,
               minimumSize: Size(double.infinity, 50.h), // 버튼 높이도 살짝 키움
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.w)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.w)),
             ),
-            child: Text(
-              isSubmitReady
-                  ? '투표 완료하기'
-                  : '${VoteNotifier.MAX_PICKS - selectedPicks.length}명을 더 선택해주세요',
-              style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.bold),
-            ),
+            // 💡 텍스트 대신 아이콘+텍스트 조합 위젯 사용
+            child: _buildButtonContent(selectedPicks.length, isSubmitReady),
           ),
         ],
       ),
+    );
+  }
+
+  /// 💡 아이콘을 활용하여 짧고 직관적인 버튼 내용 반환
+  Widget _buildButtonContent(int currentLength, bool isReady) {
+    if (isReady) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_rounded, size: 20.w),
+          SizedBox(width: 6.w),
+          Text(
+            '투표 완료',
+            style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.bold),
+          ),
+        ],
+      );
+    }
+
+    IconData icon;
+    String text;
+
+    switch (currentLength) {
+      case 0:
+        icon = Icons.looks_one_rounded;
+        text = '1위 선택하기';
+        break;
+      case 1:
+        icon = Icons.looks_two_rounded;
+        text = '2위 선택하기';
+        break;
+      case 2:
+        icon = Icons.looks_3_rounded;
+        text = '3위 선택하기';
+        break;
+      default:
+        icon = Icons.touch_app_rounded;
+        text = '투표 진행';
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 20.w),
+        SizedBox(width: 6.w),
+        Text(
+          text,
+          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }

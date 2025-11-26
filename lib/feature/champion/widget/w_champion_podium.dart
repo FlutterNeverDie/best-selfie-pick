@@ -1,96 +1,109 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
-import 'package:text_gradiate/text_gradiate.dart'; // 그라데이션 타이틀용
+import 'package:text_gradiate/text_gradiate.dart';
 
-class WChampionPodium extends StatelessWidget {
+import '../provider/champion_provider.dart'; // 그라데이션 타이틀용
+
+class WChampionPodium extends ConsumerWidget {
   final List<EntryModel> champions;
 
   const WChampionPodium({super.key, required this.champions});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (champions.isEmpty) return const SizedBox.shrink();
 
     final first = champions.isNotEmpty ? champions[0] : null;
     final second = champions.length > 1 ? champions[1] : null;
     final third = champions.length > 2 ? champions[2] : null;
 
-    return Column(
-      children: [
-        SizedBox(height: 20.h),
 
-        // 1. 헤더: 명예의 전당 타이틀
-        Text(
-          '명예의 전당 🏆',
-          style: TextStyle(
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w900,
-            color: AppColor.black,
-            letterSpacing: -0.5,
-          ),
-        ),
-        SizedBox(height: 30.h),
 
-        // 2. 포디움 디스플레이 (Stack 대신 Row + Spacer로 깔끔하게)
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // 2nd Place (왼쪽 하단)
-              if (second != null)
-                Expanded(child: _buildPodiumItem(second, 2)),
 
-              // 1st Place (중앙)
-              if (first != null)
-                _buildPodiumItem(first, 1),
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(championProvider);
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(height: 20.h),
 
-              // 3rd Place (오른쪽 하단)
-              if (third != null)
-                Expanded(child: _buildPodiumItem(third, 3)),
-            ],
-          ),
-        ),
-
-        SizedBox(height: 40.h),
-
-        // 3. 우승자 소감 카드 (1위에게만)
-        if (first != null)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: Colors.amber.shade200),
+            // 1. 헤더: 명예의 전당 타이틀
+            Text(
+              '명예의 전당 🏆',
+              style: TextStyle(
+                fontSize: 24.sp,
+                fontWeight: FontWeight.w900,
+                color: AppColor.black,
+                letterSpacing: -0.5,
               ),
-              child: Column(
+            ),
+            SizedBox(height: 30.h),
+
+            // 2. 포디움 디스플레이 (Stack 대신 Row + Spacer로 깔끔하게)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '🥇 1위 (${first.regionCity}) 우승 소감',
-                    style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber.shade900),
-                  ),
-                  SizedBox(height: 10.h),
-                  Text(
-                    // 💡 [수정됨] 하드코딩된 기본 문구 사용
-                    '"${first.snsId}님! 투표해주신 모든 분들께 감사드립니다! 다음 주에도 도전할게요."',
-                    style: TextStyle(
-                        fontSize: 16.sp, fontStyle: FontStyle.italic, color: Colors.black87),
-                    textAlign: TextAlign.center,
-                  ),
+                  // 2nd Place (왼쪽 하단)
+                  if (second != null)
+                    Expanded(child: _buildPodiumItem(second, 2)),
+
+                  // 1st Place (중앙)
+                  if (first != null)
+                    _buildPodiumItem(first, 1),
+
+                  // 3rd Place (오른쪽 하단)
+                  if (third != null)
+                    Expanded(child: _buildPodiumItem(third, 3)),
                 ],
               ),
             ),
-          ),
-      ],
+
+            SizedBox(height: 40.h),
+
+            // 3. 우승자 소감 카드 (1위에게만)
+            if (first != null)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Container(
+                  padding: EdgeInsets.all(20.w),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '🥇 1위 (${first.regionCity}) 우승 소감',
+                        style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade900),
+                      ),
+                      SizedBox(height: 10.h),
+                      Text(
+                        // 💡 [수정됨] 하드코딩된 기본 문구 사용
+                        '"${first.snsId}님! 투표해주신 모든 분들께 감사드립니다! 다음 주에도 도전할게요."',
+                        style: TextStyle(
+                            fontSize: 16.sp, fontStyle: FontStyle.italic, color: Colors.black87),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 

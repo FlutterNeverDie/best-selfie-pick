@@ -3,7 +3,7 @@ import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 @immutable
-class VotingStatus {
+class VotingState {
   // 1. 투표 상태
   final List<EntryModel> candidates; // 현재 로드된 모든 후보 목록
   final List<EntryModel> selectedPicks; // 금/은/동으로 선택된 3명의 후보
@@ -19,7 +19,7 @@ class VotingStatus {
   final DateTime? lastFetchedTime; // 마지막으로 서버에 요청을 보낸 시간 (로컬 캐싱 관리용)
 
 
-  const VotingStatus({
+  const VotingState({
     this.candidates = const [],
     this.selectedPicks = const [],
     this.isVoted = false,
@@ -31,7 +31,7 @@ class VotingStatus {
   });
 
   // 불변성을 위한 copyWith
-  VotingStatus copyWith({
+  VotingState copyWith({
     List<EntryModel>? candidates,
     List<EntryModel>? selectedPicks,
     bool? isVoted,
@@ -41,7 +41,7 @@ class VotingStatus {
     DocumentSnapshot? lastDocument,
     DateTime? lastFetchedTime, // ⬅️ copyWith에 추가
   }) {
-    return VotingStatus(
+    return VotingState(
       candidates: candidates ?? this.candidates,
       selectedPicks: selectedPicks ?? this.selectedPicks,
       isVoted: isVoted ?? this.isVoted,

@@ -10,17 +10,17 @@ import '../../auth/provider/auth_notifier.dart';
 import '../../../shared/provider/contest_status/contest_status_provider.dart';
 
 // 💡 VoteNotifierProvider 정의
-final voteProvider = NotifierProvider<VoteNotifier, VotingStatus>(
+final voteProvider = NotifierProvider<VoteNotifier, VotingState>(
       () => VoteNotifier(),
   name: 'voteProvider',
 );
 
-class VoteNotifier extends Notifier<VotingStatus> {
+class VoteNotifier extends Notifier<VotingState> {
   // 💡 투표 선택 제한 수
   static const int MAX_PICKS = 3;
 
   @override
-  VotingStatus build() {
+  VotingState build() {
     // 💡 build() 시점에서 Auth, ContestStatus를 watch하여 Notifier의 생명주기를 결정하고 상태를 초기화합니다.
     final authState = ref.watch(authProvider);
     final contestStatus = ref.watch(contestStatusProvider);
@@ -38,7 +38,7 @@ class VoteNotifier extends Notifier<VotingStatus> {
 
     // 4. 초기 상태 반환 (isLoadingNextPage: true 제거)
     // 💡 이제 초기 상태는 로딩 중이 아님을 명시합니다. 로딩 상태는 loadCandidates에서 설정됩니다.
-    return const VotingStatus(isLoadingNextPage: false);
+    return const VotingState(isLoadingNextPage: false);
   }
 
   // 💡 Repository와 값을 메서드 내에서 필요할 때마다 가져오는 헬퍼 메서드

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 import 'package:selfie_pick/feature/champion/provider/champion_provider.dart';
 import 'package:selfie_pick/feature/champion/provider/state/champion.state.dart';
+import 'package:selfie_pick/feature/champion/widget/w_champion_app_bar.dart';
 
 // 💡 분리된 위젯 Import
 import 'widget/w_champion_podium.dart';
@@ -13,12 +14,7 @@ import 'widget/w_no_champion_message.dart';
 class ChampionScreen extends ConsumerWidget {
   const ChampionScreen({super.key});
 
-  // 💡 [수정] 새로고침 로직: Notifier의 로드 함수를 직접 호출
-  Future<void> _onRefresh(WidgetRef ref) async {
-    // build 내부에서 이미 필요한 인자를 가져오고 있으므로,
-    // 여기서는 Notifier를 invalidate하고 재빌드하여 로드를 트리거합니다.
-    ref.invalidate(championProvider);
-  }
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,30 +23,8 @@ class ChampionScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50, // 배경색 통일
-      appBar: AppBar(
-        title: const Text('챔피언', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-      ),
-      // 💡 [수정] RefreshIndicator는 ChampionScreen 전체를 감싸는 것이 더 적절합니다.
-      body: RefreshIndicator(
-        onRefresh: () => _onRefresh(ref),
-        color: AppColor.primary,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              // 스크롤 뷰가 화면을 꽉 채우도록 설정 (당겨서 새로고침을 위해 필수)
-              minHeight: MediaQuery.of(context).size.height -
-                  AppBar().preferredSize.height - MediaQuery.of(context).padding.top,
-            ),
-            child: _buildBody(state),
-          ),
-        ),
-      ),
+      appBar: WChampionAppBar(),
+      body: _buildBody(state),
     );
   }
 
