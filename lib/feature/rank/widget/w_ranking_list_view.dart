@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/feature/rank/widget/w_ranking_list_item.dart';
 import 'package:text_gradiate/text_gradiate.dart';
@@ -41,6 +42,9 @@ class WRankingListView extends ConsumerWidget {
     final topThree = rankingData.take(3).toList();
     final challengers = rankingData.skip(3).toList();
 
+    // 지역
+    final region = ref.read(authProvider).user!.region ?? '??';
+
     return RefreshIndicator(
       onRefresh: () async {
         await ref.read(voteProvider.notifier).loadCandidates();
@@ -61,7 +65,7 @@ class WRankingListView extends ConsumerWidget {
             ),
 
             // 3. 시상대 위젯 (타이머 포함)
-            if (topThree.isNotEmpty) WRankingTopPodium(topThree: topThree),
+            if (topThree.isNotEmpty) WRankingTopPodium(topThree: topThree,region : region ),
 
             // 4. 나머지 참가자 섹션
             if (challengers.isNotEmpty) ...[

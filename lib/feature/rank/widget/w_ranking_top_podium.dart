@@ -11,8 +11,10 @@ import '../provider/dialog/d_ranking_image_detail.dart'; // 다이얼로그 impo
 
 class WRankingTopPodium extends StatelessWidget {
   final List<EntryModel> topThree;
+  final String region;
 
-  const WRankingTopPodium({super.key, required this.topThree});
+  const WRankingTopPodium(
+      {super.key, required this.topThree, required this.region});
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +44,16 @@ class WRankingTopPodium extends StatelessWidget {
         children: [
           // 1. 🔥 실시간 핫 픽 타이틀
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 8.h),
+            padding:
+                EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 8.h),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextGradiate(
                   text: Text(
-                    '실시간 핫 픽',
-                    style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
+                    '실시간 ${region} 랭킹',
+                    style:
+                        TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
                   ),
                   colors: [
                     Colors.pinkAccent.shade700,
@@ -83,14 +87,12 @@ class WRankingTopPodium extends StatelessWidget {
                     bottom: 0,
                     child: _buildPodiumItem(context, second, 2),
                   ),
-
                 if (third != null)
                   Positioned(
                     right: 16.w,
                     bottom: 0,
                     child: _buildPodiumItem(context, third, 3),
                   ),
-
                 if (first != null)
                   Positioned(
                     left: 0,
@@ -162,7 +164,10 @@ class WRankingTopPodium extends StatelessWidget {
                   color: rankColor,
                   size: 36.w,
                   shadows: [
-                    BoxShadow(color: rankColor.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 2))
+                    BoxShadow(
+                        color: rankColor.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2))
                   ],
                 ),
               )
@@ -177,8 +182,7 @@ class WRankingTopPodium extends StatelessWidget {
                 borderRadius: BorderRadius.circular(isFirst ? 16.w : 12.w),
                 border: Border.all(
                     color: rankColor.withOpacity(0.8),
-                    width: isFirst ? 3.w : 2.w
-                ),
+                    width: isFirst ? 3.w : 2.w),
                 boxShadow: [
                   BoxShadow(
                     color: rankColor.withOpacity(isFirst ? 0.4 : 0.2),
@@ -195,10 +199,11 @@ class WRankingTopPodium extends StatelessWidget {
                     CachedNetworkImage(
                       imageUrl: entry.thumbnailUrl,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: Colors.grey[100]),
-                      errorWidget: (context, url, error) => const Icon(Icons.person),
+                      placeholder: (context, url) =>
+                          Container(color: Colors.grey[100]),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.person),
                     ),
-
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: Container(
@@ -207,12 +212,14 @@ class WRankingTopPodium extends StatelessWidget {
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.8)
+                            ],
                           ),
                         ),
                       ),
                     ),
-
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: Padding(
@@ -226,8 +233,7 @@ class WRankingTopPodium extends StatelessWidget {
                               fontStyle: FontStyle.italic,
                               shadows: [
                                 Shadow(color: Colors.black, blurRadius: 4.w),
-                              ]
-                          ),
+                              ]),
                         ),
                       ),
                     ),

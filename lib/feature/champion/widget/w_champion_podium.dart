@@ -6,12 +6,32 @@ import 'package:selfie_pick/core/theme/colors/app_color.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:text_gradiate/text_gradiate.dart';
 
-import '../provider/champion_provider.dart'; // 그라데이션 타이틀용
+import '../provider/champion_provider.dart';
 
 class WChampionPodium extends ConsumerWidget {
   final List<EntryModel> champions;
 
   const WChampionPodium({super.key, required this.champions});
+
+  // 💡 [수정] 구체적인 정보가 담긴 타이틀 생성
+  String _getDetailTitle(EntryModel firstEntry) {
+    String year = '';
+    String week = '';
+
+    print( 'weekKey: ${firstEntry.weekKey}');
+
+    try {
+      // "2025-W12" -> ["2025", "12"]
+      final parts = firstEntry.weekKey.split('-W');
+      if (parts.length == 2) {
+        year = '${parts[0]}년 ';
+        week = '${int.parse(parts[1])}주차 '; // "01" -> "1"
+      }
+    } catch (_) {}
+
+    // 예: "2025년 12주차 서울 강남구 베스트 픽"
+    return '$year$week${firstEntry.regionCity} 베스트 픽';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,46 +41,53 @@ class WChampionPodium extends ConsumerWidget {
     final second = champions.length > 1 ? champions[1] : null;
     final third = champions.length > 2 ? champions[2] : null;
 
-
-
+    // 💡 동적 타이틀
+    final String title = first != null
+        ? _getDetailTitle(first)
+        : '이번 주 베스트 픽';
 
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(championProvider);
       },
+      color: AppColor.primary,
       child: SingleChildScrollView(
         child: Column(
           children: [
             SizedBox(height: 20.h),
 
-            // 1. 헤더: 명예의 전당 타이틀
-            Text(
-              '명예의 전당 🏆',
-              style: TextStyle(
-                fontSize: 24.sp,
-                fontWeight: FontWeight.w900,
-                color: AppColor.black,
-                letterSpacing: -0.5,
+            // 1. 헤더: 구체적인 타이틀 (년도/주차/지역)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20.sp, // 너무 길어질 수 있어 사이즈 약간 조정
+                  fontWeight: FontWeight.w800,
+                  color: AppColor.black,
+                  height: 1.3,
+                ),
               ),
             ),
             SizedBox(height: 30.h),
 
-            // 2. 포디움 디스플레이 (Stack 대신 Row + Spacer로 깔끔하게)
+            // 2. 포디움 디스플레이
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // 2nd Place (왼쪽 하단)
+                  // 2nd Place
                   if (second != null)
                     Expanded(child: _buildPodiumItem(second, 2)),
 
-                  // 1st Place (중앙)
+                  // 1st Place
                   if (first != null)
                     _buildPodiumItem(first, 1),
 
-                  // 3rd Place (오른쪽 하단)
+                  // 3rd Place
                   if (third != null)
                     Expanded(child: _buildPodiumItem(third, 3)),
                 ],
@@ -69,47 +96,115 @@ class WChampionPodium extends ConsumerWidget {
 
             SizedBox(height: 40.h),
 
-            // 3. 우승자 소감 카드 (1위에게만)
+            // 3. 🎁 [수정] 뱃지 시스템 안내 반영
             if (first != null)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Container(
-                  padding: EdgeInsets.all(20.w),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: Colors.amber.shade200),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '🥇 1위 (${first.regionCity}) 우승 소감',
-                        style: TextStyle(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade900),
-                      ),
-                      SizedBox(height: 10.h),
-                      Text(
-                        // 💡 [수정됨] 하드코딩된 기본 문구 사용
-                        '"${first.snsId}님! 투표해주신 모든 분들께 감사드립니다! 다음 주에도 도전할게요."',
-                        style: TextStyle(
-                            fontSize: 16.sp, fontStyle: FontStyle.italic, color: Colors.black87),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildRewardInfoCard(),
+
+            SizedBox(height: 40.h),
           ],
         ),
       ),
     );
   }
 
+  // 💡 [수정] 골드/실버/브론즈 뱃지 시스템을 반영한 보상 안내 카드
+  Widget _buildRewardInfoCard() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColor.primary.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+          border: Border.all(color: AppColor.primary.withOpacity(0.1)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 💡 [수정] 빛나는 아이콘(auto_awesome)으로 변경
+                Icon(Icons.auto_awesome, color: Colors.amber, size: 24.w),
+                SizedBox(width: 8.w),
+                Text(
+                  'Champion Rewards',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColor.black,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                // 💡 [수정] 빛나는 아이콘(auto_awesome)으로 변경
+                Icon(Icons.auto_awesome, color: Colors.amber, size: 24.w),
+              ],
+            ),
+            SizedBox(height: 16.h),
+
+            // 혜택 내용 수정
+            Text(
+              '각 지역 상위 3명의 유저에게는\n순위에 맞는 스페셜 뱃지가 수여됩니다.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+            SizedBox(height: 20.h),
+
+            // 보상 아이콘 (골드, 실버, 브론즈 뱃지)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildRewardItem(Icons.emoji_events, '골드 뱃지', const Color(0xFFFFD700)),
+                SizedBox(width: 24.w),
+                _buildRewardItem(Icons.emoji_events, '실버 뱃지', const Color(0xFFC0C0C0)),
+                SizedBox(width: 24.w),
+                _buildRewardItem(Icons.emoji_events, '브론즈 뱃지', const Color(0xFFCD7F32)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 💡 [수정] 색상을 받을 수 있도록 파라미터 추가
+  Widget _buildRewardItem(IconData icon, String label, Color color) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(10.w),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withOpacity(0.3), width: 1.w),
+          ),
+          child: Icon(icon, color: color, size: 24.w),
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPodiumItem(EntryModel entry, int rank) {
     final isFirst = rank == 1;
-    // Top 3 포디움 높이 차이를 주기 위한 공간 (1등은 0, 2등은 20, 3등은 30)
     final double heightOffset = isFirst ? 0 : (rank == 2 ? 20.h : 30.h);
     final double avatarSize = isFirst ? 60.w : 50.w;
 
@@ -122,15 +217,14 @@ class WChampionPodium extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // 1. 왕관/아이콘
+        // 💡 [수정] 아이콘 변경: military_tech_rounded -> emoji_events_rounded (왕관/트로피)
         if (isFirst)
-          Icon(Icons.military_tech_rounded, color: medalColor, size: 40.w)
+          Icon(Icons.emoji_events_rounded, color: medalColor, size: 40.w)
         else
-          SizedBox(height: 40.w), // 1등과 높이 맞추기 위해 공간 확보
+          SizedBox(height: 40.w),
 
         SizedBox(height: 10.h),
 
-        // 2. 아바타 (BorderSize 조정)
         Container(
           padding: EdgeInsets.all(isFirst ? 5.w : 3.w),
           decoration: BoxDecoration(
@@ -157,7 +251,6 @@ class WChampionPodium extends ConsumerWidget {
         ),
         SizedBox(height: 16.h),
 
-        // 3. 랭크 및 점수
         Container(
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
           decoration: BoxDecoration(
@@ -175,7 +268,6 @@ class WChampionPodium extends ConsumerWidget {
         ),
         SizedBox(height: 8.h),
 
-        // 4. SNS ID (그라데이션 텍스트)
         TextGradiate(
           text: Text(
             "@${entry.snsId}",
@@ -190,7 +282,6 @@ class WChampionPodium extends ConsumerWidget {
 
         SizedBox(height: 4.h),
 
-        // 5. Score
         Text(
           "${entry.totalScore}점",
           style: TextStyle(
@@ -199,7 +290,6 @@ class WChampionPodium extends ConsumerWidget {
           ),
         ),
 
-        // 6. 포디움 높이 (핵심)
         SizedBox(height: heightOffset),
       ],
     );

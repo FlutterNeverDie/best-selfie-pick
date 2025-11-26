@@ -37,7 +37,7 @@ class RankingScreen extends ConsumerWidget {
     }
 
     // 2. 📭 데이터 없음 처리 (로딩이 끝났는데도 비어있는 경우)
-    // 💡 요청하신 대로 이 경우에도 AppBar가 유지됩니다.
+
     if (voteStatus.candidates.isEmpty) {
       return const WNoCandidatesMessage();
     }

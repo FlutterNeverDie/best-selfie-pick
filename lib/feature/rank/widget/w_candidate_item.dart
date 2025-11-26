@@ -55,7 +55,7 @@ class WCandidateItem extends ConsumerWidget {
               // 1. 이미지
               WCachedImage(
                 imageUrl:
-                    candidate.thumbnailUrl,
+                candidate.thumbnailUrl,
                 fit: BoxFit.cover,
               ),
 
@@ -63,7 +63,7 @@ class WCandidateItem extends ConsumerWidget {
               if (isSelected)
                 Container(color: borderColor.withOpacity(0.2)),
 
-              // 3. 하단 그라데이션
+              // 3. 하단 그라데이션 (배경 박스가 생겼지만 깊이감을 위해 유지)
               Positioned(
                 bottom: 0, left: 0, right: 0, height: 40.h,
                 child: Container(
@@ -71,26 +71,33 @@ class WCandidateItem extends ConsumerWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.4)],
                     ),
                   ),
                 ),
               ),
 
-              // 4. SNS ID
+              // 4. SNS ID (💡 수정: 하단 밀착 및 왼쪽 정렬)
               Positioned(
-                bottom: 8.h, left: 8.w, right: 8.w,
-                child: Text(
-                  '@${candidate.snsId}',
-                  style: TextStyle(
-                    color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600,
-                    shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+                bottom: 0, left: 0, right: 0, // 하단 및 좌우 꽉 채움
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+                  color: Colors.black.withOpacity(0.6), // 반투명 배경 (라운딩 제거)
+                  child: Text(
+                    '@${candidate.snsId}',
+                    textAlign: TextAlign.left, // 왼쪽 정렬
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ),
 
-              // 5. 🥇 순위 뱃지 (통일된 아이콘 + 순위별 색상)
+              // 5. 🥇 순위 뱃지
               if (isSelected)
                 Positioned(
                   top: 8.h, right: 8.w,
@@ -102,8 +109,8 @@ class WCandidateItem extends ConsumerWidget {
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4.w)],
                     ),
                     child: Icon(
-                      badgeIcon, // 💡 통일된 아이콘
-                      color: borderColor, // 💡 순위별 색상 적용
+                      badgeIcon,
+                      color: borderColor,
                       size: 20.w,
                     ),
                   ),
