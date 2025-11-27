@@ -48,8 +48,6 @@ class ChampionNotifier extends Notifier<ChampionState> {
       return;
     }
 
-    // 💡 상태 변경: 여기서는 로딩을 true로 재설정하지 않고 바로 로직을 수행합니다.
-    // state = state.copyWith(isLoading: true, error: null);
 
     try {
       // 2. Repository 호출: 현재 사용자 지역의 지난 정산 결과를 요청

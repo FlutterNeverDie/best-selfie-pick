@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// 사용자 정보를 담는 데이터 모델 클래스.
 ///
 /// Firebase Authentication 및 Firestore의 사용자 문서를 매핑합니다.
-/// 앱 내에서 사용자의 인증 정보, 프로필, 상태 등을 관리합니다.
+/// 앱 내에서 사용자의 인증 정보, 프로필, 상태, **리워드(뱃지, 포인트)** 등을 관리합니다.
 class UserModel {
   // ====================================================
   // I. 인증 및 시스템 필수 필드
@@ -48,6 +48,27 @@ class UserModel {
   /// - 중복 참가를 방지하거나 참가 기록을 추적하는 데 사용됩니다.
   final String? lastEntryWeekKey;
 
+  // ====================================================
+  // III. 🏆 리워드 및 활동 데이터 (신규 추가)
+  // ====================================================
+
+  /// 명예 점수 (Honor Score)
+  /// - 우승, 투표 참여 등으로 획득하는 누적 명예 점수
+  final int honorScore;
+
+  /// 보유 포인트 (Points)
+  /// - 아이템 구매 등에 사용 가능한 재화
+  final int points;
+
+  /// 골드 뱃지 획득 횟수 (1위)
+  final int badgeGold;
+
+  /// 실버 뱃지 획득 횟수 (2위)
+  final int badgeSilver;
+
+  /// 브론즈 뱃지 획득 횟수 (3위)
+  final int badgeBronze;
+
   /// 기본 생성자
   ///
   /// 모든 필드를 초기화합니다. 불변 객체로 생성됩니다.
@@ -61,6 +82,12 @@ class UserModel {
     this.isSocialLogin = false,
     this.isAdmin = false,
     this.lastEntryWeekKey,
+    // 리워드 필드 초기화 (기본값 0)
+    this.honorScore = 0,
+    this.points = 0,
+    this.badgeGold = 0,
+    this.badgeSilver = 0,
+    this.badgeBronze = 0,
   });
 
   /// 회원가입 직후 초기 사용자 객체를 생성하는 팩토리 생성자
@@ -71,7 +98,7 @@ class UserModel {
   /// - [isAdmin]: 관리자 여부
   ///
   /// 성별과 지역은 'NotSet'으로 초기화되며,
-  /// [regionUpdatedAt]은 바로 변경 가능하도록 1년 전으로 설정됩니다.
+  /// 리워드 관련 필드는 모두 0으로 시작합니다.
   factory UserModel.initial({
     required String uid,
     required String email,
@@ -89,6 +116,11 @@ class UserModel {
       isSocialLogin: isSocialLogin,
       isAdmin: isAdmin,
       lastEntryWeekKey: null,
+      honorScore: 0,
+      points: 0,
+      badgeGold: 0,
+      badgeSilver: 0,
+      badgeBronze: 0,
     );
   }
 
@@ -100,8 +132,7 @@ class UserModel {
   /// Firestore 문서 데이터(Map)를 [UserModel] 객체로 변환합니다.
   ///
   /// - [map]: Firestore에서 가져온 데이터 맵
-  /// - [regionUpdatedAt] 필드는 [Timestamp] 타입으로 처리되며,
-  ///   데이터가 없거나 형식이 맞지 않을 경우 기본값(1년 전)으로 설정하여 안전성을 보장합니다.
+  /// - 기존 사용자의 경우 리워드 필드가 없을 수 있으므로 `?? 0`으로 안전하게 처리합니다.
   factory UserModel.fromMap(Map<String, dynamic> map) {
     // Firestore Timestamp를 DateTime으로 변환
     final regionTimestamp = map['regionUpdatedAt'];
@@ -124,12 +155,16 @@ class UserModel {
       isSocialLogin: map['isSocialLogin'] ?? false,
       isAdmin: map['isAdmin'] ?? false,
       lastEntryWeekKey: map['lastEntryWeekKey'] as String?,
+      // 💡 신규 필드 매핑 (기존 데이터가 없을 경우 0 처리)
+      honorScore: (map['honorScore'] as num?)?.toInt() ?? 0,
+      points: (map['points'] as num?)?.toInt() ?? 0,
+      badgeGold: (map['badgeGold'] as num?)?.toInt() ?? 0,
+      badgeSilver: (map['badgeSilver'] as num?)?.toInt() ?? 0,
+      badgeBronze: (map['badgeBronze'] as num?)?.toInt() ?? 0,
     );
   }
 
   /// [UserModel] 객체를 Firestore에 저장하기 위한 Map 형태로 변환합니다.
-  ///
-  /// - [regionUpdatedAt]은 [DateTime]에서 Firestore의 [Timestamp]로 변환되어 저장됩니다.
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -137,17 +172,20 @@ class UserModel {
       'fcmToken': fcmToken,
       'gender': gender,
       'region': region,
-      // DateTime을 Firestore Timestamp로 변환하여 저장
       'regionUpdatedAt': Timestamp.fromDate(regionUpdatedAt),
       'isSocialLogin': isSocialLogin,
       'isAdmin': isAdmin,
       'lastEntryWeekKey': lastEntryWeekKey,
+      // 💡 신규 필드 저장
+      'honorScore': honorScore,
+      'points': points,
+      'badgeGold': badgeGold,
+      'badgeSilver': badgeSilver,
+      'badgeBronze': badgeBronze,
     };
   }
 
   /// 현재 객체의 값을 유지하면서 특정 필드만 변경된 새로운 [UserModel] 객체를 생성합니다.
-  ///
-  /// 전달되지 않은 매개변수는 현재 객체의 값을 그대로 유지합니다.
   UserModel copyWith({
     String? uid,
     String? email,
@@ -157,6 +195,11 @@ class UserModel {
     DateTime? regionUpdatedAt,
     bool? isSocialLogin,
     String? lastEntryWeekKey,
+    int? honorScore,
+    int? points,
+    int? badgeGold,
+    int? badgeSilver,
+    int? badgeBronze,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -168,12 +211,18 @@ class UserModel {
       isSocialLogin: isSocialLogin ?? this.isSocialLogin,
       isAdmin: isAdmin,
       lastEntryWeekKey: lastEntryWeekKey ?? this.lastEntryWeekKey,
+      honorScore: honorScore ?? this.honorScore,
+      points: points ?? this.points,
+      badgeGold: badgeGold ?? this.badgeGold,
+      badgeSilver: badgeSilver ?? this.badgeSilver,
+      badgeBronze: badgeBronze ?? this.badgeBronze,
     );
   }
 
   /// 객체의 문자열 표현을 반환합니다. (디버깅 용도)
   @override
   String toString() {
-    return 'UserModel(uid: $uid, email: $email, gender: $gender, region: $region, fcmToken: $fcmToken, regionUpdatedAt: $regionUpdatedAt)';
+    return 'UserModel(uid: $uid, email: $email, gender: $gender, region: $region, '
+        'honor: $honorScore, points: $points, badges: G:$badgeGold/S:$badgeSilver/B:$badgeBronze)';
   }
 }

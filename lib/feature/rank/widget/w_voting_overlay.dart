@@ -156,7 +156,9 @@ class WVotingOverlay extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 20.w),
+        Visibility(
+            visible: currentLength > 2,
+            child: Icon(icon, size: 20.w)),
         SizedBox(width: 6.w),
         Text(
           text,

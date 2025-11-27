@@ -190,8 +190,8 @@ class _WEntryNotEnteredViewState extends ConsumerState<WEntryNotEnteredView> wit
           SizedBox(height: 40.h),
 
           // 4. CTA 버튼 (두근두근 💓 + 시머 ✨)
-          if (isContestActive)
-          // 💡 ScaleTransition으로 두근거리는 효과 적용
+          if (isContestActive) ...[
+            // 💡 ScaleTransition으로 두근거리는 효과 적용
             ScaleTransition(
               scale: _scaleAnimation,
               child: Container(
@@ -253,6 +253,25 @@ class _WEntryNotEnteredViewState extends ConsumerState<WEntryNotEnteredView> wit
                 ),
               ),
             ),
+
+            // 💡 [추가된 부분] 안심 문구 추가
+            SizedBox(height: 16.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock_outline_rounded, size: 14.sp, color: Colors.grey.shade400),
+                SizedBox(width: 4.w),
+                Text(
+                  "참가 후에도 언제든 비공개로 전환할 수 있어요",
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
 
           SizedBox(height: 40.h),
         ],
