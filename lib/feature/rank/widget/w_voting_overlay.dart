@@ -10,14 +10,16 @@ class WVotingOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(voteProvider.notifier);
-    final selectedPicks = ref.watch(voteProvider.select((state) => state.selectedPicks));
+    final selectedPicks =
+        ref.watch(voteProvider.select((state) => state.selectedPicks));
     final isSubmitReady = selectedPicks.length == VoteNotifier.MAX_PICKS;
 
     return Container(
       // 💡 높이를 고정하지 않고 내부 컨텐츠 + 패딩으로 결정 (유연성 확보)
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.w)), // 라운딩 조금 더 줌
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(24.w)), // 라운딩 조금 더 줌
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -77,7 +79,7 @@ class WVotingOverlay extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 13.sp,
                             fontWeight:
-                            isPicked ? FontWeight.bold : FontWeight.w500,
+                                isPicked ? FontWeight.bold : FontWeight.w500,
                             color: isPicked
                                 ? Colors.black87
                                 : Colors.grey.shade400,
@@ -122,7 +124,7 @@ class WVotingOverlay extends ConsumerWidget {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_rounded, size: 20.w),
+          Icon(Icons.check_rounded, size: 20.w, color: Colors.white),
           SizedBox(width: 6.w),
           Text(
             '투표 완료',
@@ -156,9 +158,7 @@ class WVotingOverlay extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Visibility(
-            visible: currentLength > 2,
-            child: Icon(icon, size: 20.w)),
+        Visibility(visible: currentLength > 2, child: Icon(icon, size: 20.w)),
         SizedBox(width: 6.w),
         Text(
           text,
