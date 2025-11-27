@@ -11,7 +11,7 @@ import '../../../shared/provider/contest_status/contest_status_provider.dart';
 
 // 💡 VoteNotifierProvider 정의
 final voteProvider = NotifierProvider<VoteNotifier, VotingState>(
-      () => VoteNotifier(),
+  () => VoteNotifier(),
   name: 'voteProvider',
 );
 
@@ -31,7 +31,9 @@ class VoteNotifier extends Notifier<VotingState> {
     final currentWeekKey = contestStatus.currentWeekKey ?? '';
 
     // 2. 초기 로드가 필요한지 판단 (Provider 생성 시점)
-    if (userId.isNotEmpty && regionCity.isNotEmpty && currentWeekKey.isNotEmpty) {
+    if (userId.isNotEmpty &&
+        regionCity.isNotEmpty &&
+        currentWeekKey.isNotEmpty) {
       // 3. 투표 완료 여부와 후보 목록을 비동기로 로드합니다.
       Future.microtask(() => _initializeData());
     }
@@ -48,7 +50,6 @@ class VoteNotifier extends Notifier<VotingState> {
   String get _regionCity => ref.read(authProvider).user!.region;
   String get _currentWeekKey => ref.read(contestStatusProvider).currentWeekKey!;
 
-
   // ====================================================================
   // 초기 데이터 로드 (build()에서 비동기 호출)
   // ====================================================================
@@ -58,15 +59,12 @@ class VoteNotifier extends Notifier<VotingState> {
       await checkIfAlreadyVoted();
       // 투표 완료 상태가 아니라면 후보 로드 시작
       await loadCandidates();
-
     } catch (e) {
       // 초기 로드 중 발생한 오류는 상태에 반영할 수 있으나, 현재는 로그만 남깁니다.
       debugPrint('Initial data load failed: $e');
       state = state.copyWith(isLoadingNextPage: false, hasMorePages: false);
-
     }
   }
-
 
   // ====================================================================
   // 1. 초기 투표 완료 여부 체크
@@ -75,7 +73,8 @@ class VoteNotifier extends Notifier<VotingState> {
   /// 투표 완료 기록이 있는지 확인하고 상태를 업데이트합니다.
   Future<void> checkIfAlreadyVoted() async {
     // 💡 Repository 접근에 필요한 값들을 ref.read로 가져옴
-    if (_userId.isEmpty || _regionCity.isEmpty || _currentWeekKey.isEmpty) return;
+    if (_userId.isEmpty || _regionCity.isEmpty || _currentWeekKey.isEmpty)
+      return;
 
     try {
       // ⬅️ _voteRepository 대신 _repository(RankingRepository) 사용
@@ -86,7 +85,7 @@ class VoteNotifier extends Notifier<VotingState> {
       );
 
       // 이미 투표 완료 상태라면 isVoted를 true로 설정하여 랭킹 화면으로 전환
-        state = state.copyWith(isVoted: isVoted);
+      state = state.copyWith(isVoted: isVoted);
     } catch (e) {
       debugPrint('Error checking vote status: $e');
     }
@@ -100,7 +99,7 @@ class VoteNotifier extends Notifier<VotingState> {
   Future<void> loadCandidates() async {
     debugPrint('[지역 참가자 로드 시작...]');
     // 💡  이미 로딩 중이거나, 페이지가 더 없으면 중단
-    if ( state.isLoadingNextPage || !state.hasMorePages){
+    if (state.isLoadingNextPage || !state.hasMorePages) {
       debugPrint('로딩 중이거나 더 이상 페이지가 없습니다. 로드 중단.');
       return;
     }
@@ -113,10 +112,10 @@ class VoteNotifier extends Notifier<VotingState> {
     state = state.copyWith(isLoadingNextPage: true);
 
     try {
-
       // 시간을 비교해서 현재 시간과 30초 이상 차이가 안나면 로딩 중단, 리프레시 취소
       if (state.lastFetchedTime != null) {
-        final timeSinceLastFetch = DateTime.now().difference(state.lastFetchedTime!);
+        final timeSinceLastFetch =
+            DateTime.now().difference(state.lastFetchedTime!);
         if (timeSinceLastFetch.inSeconds < 30) {
           debugPrint('최근에 데이터를 불러왔습니다. 리프레시를 취소합니다.');
           state = state.copyWith(isLoadingNextPage: false);
@@ -134,25 +133,24 @@ class VoteNotifier extends Notifier<VotingState> {
           .map((doc) => EntryModel.fromMap(doc.data(), doc.id))
           .toList();
 
-      final hasMore = newCandidates.length == 10; // CANDIDATE_BATCH_SIZE가 10이라고 가정
+      final hasMore =
+          newCandidates.length == 10; // CANDIDATE_BATCH_SIZE가 10이라고 가정
 
       final updatedCandidates = [...state.candidates, ...newCandidates];
 
       // 상태 업데이트
-        state = state.copyWith(
-          candidates: updatedCandidates,
-          isLoadingNextPage: false,
-          hasMorePages: hasMore,
-          lastDocument: snapshot.docs.isNotEmpty
-              ? snapshot.docs.last
-              : state.lastDocument,
-          lastFetchedTime: DateTime.now(),
-        );
+      state = state.copyWith(
+        candidates: updatedCandidates,
+        isLoadingNextPage: false,
+        hasMorePages: hasMore,
+        lastDocument:
+            snapshot.docs.isNotEmpty ? snapshot.docs.last : state.lastDocument,
+        lastFetchedTime: DateTime.now(),
+      );
       debugPrint('[지역 참가자 수: ${updatedCandidates.length}]');
     } catch (e, stack) {
       debugPrint('Error loading 참가자 조회: $e');
       state = state.copyWith(isLoadingNextPage: false); // 로딩만 해제
-
     }
   }
 
@@ -213,8 +211,8 @@ class VoteNotifier extends Notifier<VotingState> {
       );
 
       // 3. 성공 시 상태 업데이트
-        state = state.copyWith(isVoted: true, isSubmitting: false);
-        debugPrint('투표 제출 성공: 랭킹 조회 화면으로 전환됩니다.');
+      state = state.copyWith(isVoted: true, isSubmitting: false);
+      debugPrint('투표 제출 성공: 랭킹 조회 화면으로 전환됩니다.');
     } catch (e) {
       state = state.copyWith(isSubmitting: false);
 

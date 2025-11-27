@@ -1,3 +1,4 @@
 {
-    "dart.flutterCreateAndroidLanguage": "java"
+    "dart.flutterCreateAndroidLanguage": "java",
+    "editor.fontSize": 15
 }

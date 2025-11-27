@@ -1,0 +1,54 @@
+# Project Rules
+
+## Tech Stack
+- **Framework**: Flutter
+- **Language**: Dart
+- **State Management**: Riverpod (ConsumerWidget, ConsumerStatefulWidget)
+- **Backend**: Firebase (Firestore, Auth, Functions, Storage)
+- **Routing**: go_router
+- **UI Responsiveness**: flutter_screenutil
+
+## Core Principles
+- **No Code Generation**: Do NOT use code generation tools like `@freezed` or `json_serializable`. All models and state classes must be implemented manually.
+- **Immutable State**: All data models must use `final` fields and implement `copyWith` manually.
+- **Clean Architecture**: Strict separation of concerns:
+  - **UI**: Observes Notifier state only. No business logic.
+  - **Notifier**: Manages state and business logic, calls Repository.
+  - **Repository**: Handles data fetching and external APIs.
+
+## Naming Conventions & File Structure
+- **Screens**:
+  - Prefix: `s_` (e.g., `s_signup.dart`)
+  - Class Suffix: `Screen` (e.g., `SignupScreen`)
+  - Definition: Top-level widgets containing a `Scaffold`.
+- **Widgets**:
+  - Prefix: `w_` (e.g., `w_social_login_button.dart`)
+  - Definition: Reusable UI components.
+  - **Rule**: Separate files by feature or component. Avoid large monolithic files.
+- **Dialogs**:
+  - Prefix: `d_` (e.g., `d_confirm.dart`)
+- **Models**:
+  - Prefix: `m_` (e.g., `m_user.dart`)
+- **Providers**:
+  - Suffix: `_provider` (e.g., `auth_provider`)
+  - Variable name: `authProvider`
+
+## Coding Standards
+- **Documentation**:
+  - **Language**: Use **Korean** for all comments.
+  - **Notifier/Repository**: All methods must have detailed comments explaining their purpose, parameters, and return values.
+  - **UI**: Add comments to explain the role of major widgets and specific feature logic.
+- **Styling**: Use `flutter_screenutil` extensions (`.w`, `.h`, `.sp`) for sizing.
+- **Syntax**:
+  - Do NOT use `typeof`.
+  - Use `const` constructors wherever possible.
+  - Use `final` for all immutable variables.
+- **Widget Design**:
+  - Prefer small, focused `StatelessWidget` or `ConsumerWidget`.
+  - Extract widgets immediately when file size grows.
+- **Routing**: Use `go_router` with `AuthGate` pattern for redirection.
+
+## Firebase Security Context
+- **Firestore Rules**: Refer to `firestore.rules` in the project root.
+- **User Model**: `UserModel` (lib/model/m_user.dart) maps to `users` collection.
+- **Contest Entries**: `contest_entries` collection requires `userId` and `status` fields.

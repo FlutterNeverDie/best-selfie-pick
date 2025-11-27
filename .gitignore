@@ -45,13 +45,13 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-.env
-.cursorrules
+
+# Environment Variables
+assets/config/.env
 
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 firebase.json
-.firebaserc
 .firebase/
 firebase-debug.log
 firestore.rules 

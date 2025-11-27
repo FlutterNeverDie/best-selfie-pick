@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:selfie_pick/model/m_user.dart';
@@ -26,7 +25,6 @@ class AuthRepo {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   AuthRepo({required this.ref});
-
 
   /// 2. 이메일 회원가입 로직 (Firebase Auth & Firestore 데이터 저장)
   Future<UserModel> signUp({
@@ -219,7 +217,6 @@ class AuthRepo {
 
     final UserModel result = UserModel.fromMap(doc.data()!);
 
-
     return result;
   }
 
@@ -279,7 +276,8 @@ class AuthRepo {
       // MVP 범위에서 현재 사용자의 투표 기록 및 참가 기록만 삭제합니다.
 
       // 2-1. contest_entries (본인의 참가 기록) 삭제
-      final entrySnapshot = await _firestore.collection(MyCollection.ENTRIES)
+      final entrySnapshot = await _firestore
+          .collection(MyCollection.ENTRIES)
           .where('userId', isEqualTo: uid)
           .get();
 
@@ -290,7 +288,8 @@ class AuthRepo {
       }
 
       // 2-2. votes (본인의 투표 기록) 삭제
-      final votesSnapshot = await _firestore.collection(MyCollection.VOTES)
+      final votesSnapshot = await _firestore
+          .collection(MyCollection.VOTES)
           .where('userId', isEqualTo: uid)
           .get();
 
@@ -314,7 +313,8 @@ class AuthRepo {
     try {
       await _firestore.collection(MyCollection.USERS).doc(uid).update({
         'region': newRegion,
-        'regionUpdatedAt': FieldValue.serverTimestamp(), // 변경 시간 기록 (나중에 쿨타임 적용 등에 활용 가능)
+        'regionUpdatedAt':
+            FieldValue.serverTimestamp(), // 변경 시간 기록 (나중에 쿨타임 적용 등에 활용 가능)
       });
     } catch (e) {
       throw Exception('지역 정보를 업데이트하는 중 오류가 발생했습니다: $e');

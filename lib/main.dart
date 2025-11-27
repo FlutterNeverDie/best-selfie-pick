@@ -10,9 +10,12 @@ import 'core/data/local_storage.dart';
 import 'firebase_options.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: "assets/config/.env");
 
   //  Firebase 초기화
   await Firebase.initializeApp(
@@ -24,17 +27,13 @@ Future<void> main() async {
   // 로컬 스토리지 초기화
   await initializeLocalStorage();
 
-
   runApp(
-     ProviderScope(
+    ProviderScope(
       observers: [RiverpodObserver()],
       child: App(),
     ),
   );
 }
-
-
-
 
 Future<void> initializeLocalStorage() async {
   await LocalStorage.instance.init();

@@ -7,8 +7,7 @@ import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import '../../../shared/provider/contest_status/contest_status_provider.dart';
 
 // Provider 정의
-final championProvider =
-NotifierProvider<ChampionNotifier, ChampionState>(() {
+final championProvider = NotifierProvider<ChampionNotifier, ChampionState>(() {
   return ChampionNotifier();
 }, name: 'championProvider');
 
@@ -38,7 +37,8 @@ class ChampionNotifier extends Notifier<ChampionState> {
     return const ChampionState();
   }
 
-  Future<void> _loadChampions(String userRegion, String lastSettledWeekKey) async {
+  Future<void> _loadChampions(
+      String userRegion, String lastSettledWeekKey) async {
     // 💡 강화된 중복 호출 방지 가드:
     // build()에서 이미 isLoading: true를 반환했기 때문에,
     // 로직이 정상적으로 실행될 경우 이 가드에 걸려 바로 종료됩니다.
@@ -48,13 +48,10 @@ class ChampionNotifier extends Notifier<ChampionState> {
       return;
     }
 
-
     try {
       // 2. Repository 호출: 현재 사용자 지역의 지난 정산 결과를 요청
-      final champions = await _repository.fetchChampions(
-          userRegion,
-          lastSettledWeekKey
-      );
+      final champions =
+          await _repository.fetchChampions(userRegion, lastSettledWeekKey);
 
       // 3. 로딩 상태 해제 및 결과 반영
       state = state.copyWith(
@@ -64,7 +61,6 @@ class ChampionNotifier extends Notifier<ChampionState> {
       );
 
       debugPrint('로드 완료 champions 수 : ${champions.length}');
-
     } catch (e) {
       debugPrint('Error loading champions: $e');
       // 4. 오류 발생 시 로딩 해제 및 오류 반영

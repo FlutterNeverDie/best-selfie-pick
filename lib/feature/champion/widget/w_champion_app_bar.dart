@@ -2,21 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
-import 'package:selfie_pick/feature/champion/provider/champion_provider.dart';
 
 class WChampionAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const WChampionAppBar({super.key});
 
   @override
   Size get preferredSize => Size.fromHeight(60.h);
-
-  Future<void> _onRefresh(WidgetRef ref) async {
-    // 햅틱 피드백 추가 (선택 사항)
-    // HapticFeedback.mediumImpact();
-
-    // 데이터 새로고침
-    ref.invalidate(championProvider);
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,7 +63,6 @@ class WChampionAppBar extends ConsumerWidget implements PreferredSizeWidget {
           bottom: Radius.circular(24.w),
         ),
       ),
-
     );
   }
 }
