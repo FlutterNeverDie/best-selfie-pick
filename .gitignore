@@ -48,16 +48,9 @@ app.*.map.json
 
 # Environment Variables
 assets/config/.env
-
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 firebase.json
-.firebase/
 firebase-debug.log
 firestore.rules 
-/lib/firebase_options.dart
-
-android/app/key.properties
-
-
 /functions
