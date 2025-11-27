@@ -1,9 +1,9 @@
 // 챔피언 상태 모델 (복사)
-import '../../../my_entry/model/m_entry.dart';
+import '../../model/m_champion.dart';
 
 class ChampionState {
   final bool isLoading;
-  final List<EntryModel> champions;
+  final List<ChampionModel> champions;
   final String? error;
 
   const ChampionState({
@@ -14,7 +14,7 @@ class ChampionState {
 
   ChampionState copyWith({
     bool? isLoading,
-    List<EntryModel>? champions,
+    List<ChampionModel>? champions,
     String? error,
   }) {
     return ChampionState(

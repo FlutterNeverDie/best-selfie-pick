@@ -3,22 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
-import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:text_gradiate/text_gradiate.dart';
 
+import '../model/m_champion.dart';
 import '../provider/champion_provider.dart';
 
 class WChampionPodium extends ConsumerWidget {
-  final List<EntryModel> champions;
+  final List<ChampionModel> champions;
 
   const WChampionPodium({super.key, required this.champions});
 
   // 💡 [수정] 구체적인 정보가 담긴 타이틀 생성
-  String _getDetailTitle(EntryModel firstEntry) {
+  String _getDetailTitle(ChampionModel firstEntry) {
     String year = '';
     String week = '';
 
-    print( 'weekKey: ${firstEntry.weekKey}');
+    print('weekKey: ${firstEntry.weekKey}');
 
     try {
       // "2025-W12" -> ["2025", "12"]
@@ -42,9 +42,7 @@ class WChampionPodium extends ConsumerWidget {
     final third = champions.length > 2 ? champions[2] : null;
 
     // 💡 동적 타이틀
-    final String title = first != null
-        ? _getDetailTitle(first)
-        : '이번 주 베스트 픽';
+    final String title = first != null ? _getDetailTitle(first) : '이번 주 베스트 픽';
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -84,8 +82,7 @@ class WChampionPodium extends ConsumerWidget {
                     Expanded(child: _buildPodiumItem(second, 2)),
 
                   // 1st Place
-                  if (first != null)
-                    _buildPodiumItem(first, 1),
+                  if (first != null) _buildPodiumItem(first, 1),
 
                   // 3rd Place
                   if (third != null)
@@ -97,8 +94,7 @@ class WChampionPodium extends ConsumerWidget {
             SizedBox(height: 40.h),
 
             // 3. 🎁 [수정] 뱃지 시스템 안내 반영
-            if (first != null)
-              _buildRewardInfoCard(),
+            if (first != null) _buildRewardInfoCard(),
 
             SizedBox(height: 40.h),
           ],
@@ -164,11 +160,14 @@ class WChampionPodium extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildRewardItem(Icons.emoji_events, '골드 뱃지', const Color(0xFFFFD700)),
+                _buildRewardItem(
+                    Icons.emoji_events, '골드 뱃지', const Color(0xFFFFD700)),
                 SizedBox(width: 24.w),
-                _buildRewardItem(Icons.emoji_events, '실버 뱃지', const Color(0xFFC0C0C0)),
+                _buildRewardItem(
+                    Icons.emoji_events, '실버 뱃지', const Color(0xFFC0C0C0)),
                 SizedBox(width: 24.w),
-                _buildRewardItem(Icons.emoji_events, '브론즈 뱃지', const Color(0xFFCD7F32)),
+                _buildRewardItem(
+                    Icons.emoji_events, '브론즈 뱃지', const Color(0xFFCD7F32)),
               ],
             ),
           ],
@@ -203,7 +202,7 @@ class WChampionPodium extends ConsumerWidget {
     );
   }
 
-  Widget _buildPodiumItem(EntryModel entry, int rank) {
+  Widget _buildPodiumItem(ChampionModel entry, int rank) {
     final isFirst = rank == 1;
     final double heightOffset = isFirst ? 0 : (rank == 2 ? 20.h : 30.h);
     final double avatarSize = isFirst ? 60.w : 50.w;
@@ -211,8 +210,8 @@ class WChampionPodium extends ConsumerWidget {
     final Color medalColor = rank == 1
         ? const Color(0xFFFFD700) // Gold
         : rank == 2
-        ? const Color(0xFFC0C0C0) // Silver
-        : const Color(0xFFCD7F32); // Bronze
+            ? const Color(0xFFC0C0C0) // Silver
+            : const Color(0xFFCD7F32); // Bronze
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -241,11 +240,12 @@ class WChampionPodium extends ConsumerWidget {
           child: CircleAvatar(
             radius: avatarSize,
             backgroundColor: AppColor.lightGrey,
-            backgroundImage: entry.thumbnailUrl.isNotEmpty
-                ? CachedNetworkImageProvider(entry.thumbnailUrl)
+            backgroundImage: entry.imageUrl.isNotEmpty
+                ? CachedNetworkImageProvider(entry.imageUrl)
                 : null,
-            child: entry.thumbnailUrl.isEmpty
-                ? Icon(Icons.person, size: avatarSize * 0.8, color: AppColor.darkGrey)
+            child: entry.imageUrl.isEmpty
+                ? Icon(Icons.person,
+                    size: avatarSize * 0.8, color: AppColor.darkGrey)
                 : null,
           ),
         ),
@@ -277,7 +277,9 @@ class WChampionPodium extends ConsumerWidget {
             ),
             overflow: TextOverflow.ellipsis,
           ),
-          colors: isFirst ? [const Color(0xFFFFD700), Colors.amber.shade800] : [Colors.black87, Colors.grey.shade700],
+          colors: isFirst
+              ? [const Color(0xFFFFD700), Colors.amber.shade800]
+              : [Colors.black87, Colors.grey.shade700],
         ),
 
         SizedBox(height: 4.h),
