@@ -52,7 +52,7 @@ final blockedHistoryProvider = FutureProvider.autoDispose<List<BlockedHistoryIte
   } catch (e) {
     return [];
   }
-});
+}, name: 'blockedHistoryProvider');
 
 class BlockedUsersScreen extends ConsumerWidget {
   static const String routeName = '/blocked_users_screen';

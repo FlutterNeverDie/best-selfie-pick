@@ -15,6 +15,7 @@ class RiverpodObserver extends ProviderObserver {
 
     // 차단
     'blockedUsersInfoProvider',
+    'blockedHistoryProvider',
 
 
     // 인증

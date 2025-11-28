@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'
+    as kakao; // 💡 카카오 SDK import
 import 'package:selfie_pick/core/data/collection.dart';
 import 'package:selfie_pick/model/m_user.dart';
 
@@ -21,11 +23,12 @@ class AuthRepo {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // 💡 scopes를 지정하여 GoogleSignIn 인스턴스 생성 (필요시 email, profile 등 추가)
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   AuthRepo({required this.ref});
 
-  /// 2. 이메일 회원가입 로직 (Firebase Auth & Firestore 데이터 저장)
+  /// 2. 이메일 회원가입 로직
   Future<UserModel> signUp({
     required String email,
     required String password,
@@ -33,9 +36,8 @@ class AuthRepo {
     required String gender,
   }) async {
     try {
-      // 1. Firebase Auth 사용자 생성
       UserCredential userCredential =
-      await _auth.createUserWithEmailAndPassword(
+          await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -46,14 +48,13 @@ class AuthRepo {
             code: 'user-creation-failed', message: '사용자 계정 생성에 실패했습니다.');
       }
 
-      // 2. UserModel 생성 및 Firestore 저장 (필수 정보 포함)
       final userModel = UserModel(
         uid: user.uid,
         email: email,
         gender: gender,
         channel: region,
         channelUpdatedAt: DateTime.now(),
-        fcmToken: null, // 초기 가입 시에는 null
+        fcmToken: null,
       );
 
       await _firestore
@@ -78,15 +79,10 @@ class AuthRepo {
         password: password,
       );
 
-      print('userCredential : $userCredential');
-
       final uid = userCredential.user!.uid;
-      // 소셜 로그인과 달리 이메일 가입은 signUp 단계에서 UserModel이 생성되므로,
-      // 여기서는 Firestore에서 로드만 시도합니다.
       final result = await _fetchUserModel(uid);
 
       if (result == null) {
-        // Auth에는 있지만 Firestore에 없는 경우 (보안 규칙 문제나 데이터 누락)
         throw FirebaseAuthException(
             code: 'user-data-missing', message: '사용자 데이터를 찾을 수 없습니다.');
       } else {
@@ -99,7 +95,7 @@ class AuthRepo {
     }
   }
 
-  // 🎯 신규 추가: 소셜 로그인 완료 후 필수 정보를 Firestore에 저장하는 함수
+  /// 4. 소셜 로그인 완료 후 데이터 저장 (회원가입 확정)
   Future<UserModel> completeSocialSignUp({
     required String uid,
     required String email,
@@ -107,7 +103,6 @@ class AuthRepo {
     required String gender,
   }) async {
     try {
-      // 1. UserModel 생성 (완전한 데이터)
       final userModel = UserModel(
           uid: uid,
           email: email,
@@ -117,7 +112,6 @@ class AuthRepo {
           fcmToken: null,
           isSocialLogin: true);
 
-      // 2. Firestore 저장 (최종 문서 생성)
       await _firestore
           .collection(MyCollection.USERS)
           .doc(uid)
@@ -132,61 +126,114 @@ class AuthRepo {
   // --- 8. 소셜 로그인 함수 (Google) ---
   Future<UserModel?> signInWithGoogle() async {
     try {
-      // 🎯 수정 완료: authenticate() 메서드 사용 (v7+ 버전)
-      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
+// 🎯 수정 완료: authenticate() 메서드 사용 (v7+ 버전)
 
-      if (googleUser == null) return null; // 사용자가 취소함
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
-      final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.idToken,
         idToken: googleAuth.idToken,
       );
 
       final UserCredential userCredential =
-      await _auth.signInWithCredential(credential);
+          await _auth.signInWithCredential(credential);
+
       final user = userCredential.user!;
 
       final loadedUser = await _fetchUserModel(user.uid);
 
       if (loadedUser == null) {
-        // 🎯 핵심 변경: Firestore에 데이터가 없는 경우,
-        // Firebase Auth 정보만 포함한 '프로필 불완전(NotSet)' 상태의 UserModel을 반환합니다.
+// 🎯 핵심 변경: Firestore에 데이터가 없는 경우,
+
+// Firebase Auth 정보만 포함한 '프로필 불완전(NotSet)' 상태의 UserModel을 반환합니다.
+
         return UserModel.initial(
             uid: user.uid,
-            email: user.email ?? 'social_user_${user.uid}@gmail.com',
-            isSocialLogin: true);
+            email: user.email ?? 'social_user_${user.uid}@gmail.com');
       }
 
       return loadedUser;
     } on FirebaseAuthException catch (e) {
+// Firebase Auth 관련 오류 처리
+
       throw Exception('Google 로그인 중 오류 발생: ${e.code}');
     } catch (e) {
+// 기타 오류 (SDK 관련 등) 처리
+
       throw Exception('Google 로그인 중 알 수 없는 오류 발생: $e');
     }
   }
 
-  // --- 9. 소셜 로그인 함수 (Apple) - 미구현 상태 유지 ---
+  // --- 10. 소셜 로그인 함수 (Kakao) - OIDC 방식 ---
+  Future<UserModel?> signInWithKakao() async { 
+  /*  try {
+      // 1. 카카오 로그인 시도 (카카오톡 앱 or 계정)
+      kakao.OAuthToken token;
+      if (await kakao.isKakaoTalkInstalled()) {
+        try {
+          token = await kakao.UserApi.instance.loginWithKakaoTalk();
+        } catch (error) {
+          // 사용자가 취소했거나 에러 발생 시 계정 로그인 시도
+          if (error is kakao.PlatformException && error.code == 'CANCELED') {
+            return null;
+          }
+          token = await kakao.UserApi.instance.loginWithKakaoAccount();
+        }
+      } else {
+        token = await kakao.UserApi.instance.loginWithKakaoAccount();
+      }
+
+      // 2. Firebase OIDC 로그인
+      // 💡 주의: Firebase Console에서 'oidc.kakao' 제공업체가 설정되어 있어야 합니다.
+      final provider = OAuthProvider('oidc.kakao');
+      final credential = provider.credential(
+        idToken: token.idToken,
+        accessToken: token.accessToken,
+      );
+
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      final user = userCredential.user!;
+
+      // 3. Firestore 조회
+      final loadedUser = await _fetchUserModel(user.uid);
+
+      if (loadedUser == null) {
+        // 🎯 신규 유저: 초기화된 모델 반환 (회원가입 유도)
+        return UserModel.initial(
+            uid: user.uid,
+            email: user.email ?? 'kakao_${user.uid}@no.email', // 이메일 없을 경우 대비
+            isSocialLogin: true);
+      }
+
+      return loadedUser;
+    } catch (e) {
+      // 카카오 로그인 실패 처리
+      if (e is kakao.PlatformException && e.code == 'CANCELED') {
+        return null;
+      }
+      throw Exception('Kakao 로그인 실패: $e');
+    }*/
+  }
+
+  // --- 9. 소셜 로그인 함수 (Apple) - 미구현 ---
   Future<UserModel?> signInWithApple() async {
     // TODO: 애플 로그인 구현 필요
     return null;
   }
 
-  // --- 10. 소셜 로그인 함수 (Kakao) - 미구현 상태 유지 ---
-  Future<UserModel?> signInWithKakao() async {
-    // TODO: 카카오 로그인 구현 필요
-    return null;
-  }
-
-  /// 4. 로그아웃 로직 (Firebase Auth + 소셜 SDK 세션 종료)
+  /// 4. 로그아웃 로직
   Future<void> signOut() async {
     try {
       await _googleSignIn.disconnect();
     } catch (_) {}
 
-    // 카카오 로그아웃 로직 (추후 구현 시 주석 해제)
-    // try { await kakao.UserApi.instance.logout(); } catch (_) {}
+    try {
+      // 카카오 토큰 삭제 (로그아웃)
+      // await kakao.UserApi.instance.logout();
+    } catch (_) {}
 
     await _auth.signOut();
   }
@@ -196,18 +243,17 @@ class AuthRepo {
     return _fetchUserModel(uid);
   }
 
-  /// 6. 내부적으로 Firestore에서 UserModel을 가져오는 로직 (공통 사용)
+  /// 6. 내부적으로 Firestore에서 UserModel을 가져오는 로직
   Future<UserModel?> _fetchUserModel(String uid) async {
     final doc = await _firestore.collection(MyCollection.USERS).doc(uid).get();
 
     if (!doc.exists) {
       return null;
     }
-
     return UserModel.fromMap(doc.data()!);
   }
 
-  /// 11. 특정 이메일 주소로 등록된 인증 방법이 있는지 확인 (중복 확인)
+  /// 11. 이메일 중복 확인
   Future<EmailCheckStatus> checkIfEmailExists(String emailAddress) async {
     try {
       final QuerySnapshot result = await _firestore
@@ -234,7 +280,7 @@ class AuthRepo {
     }
   }
 
-  /// 12. 회원 탈퇴 로직 (계정 삭제 및 DB 데이터 삭제)
+  /// 12. 회원 탈퇴 로직
   Future<void> deleteAccount(String uid) async {
     final user = _auth.currentUser;
     if (user == null || user.uid != uid) {
@@ -242,11 +288,9 @@ class AuthRepo {
     }
 
     await _firestore.runTransaction((transaction) async {
-      // 1. Firestore에서 UserModel 문서 삭제
       final userRef = _firestore.collection(MyCollection.USERS).doc(uid);
       transaction.delete(userRef);
 
-      // 2. contest_entries (본인의 참가 기록) 삭제
       final entrySnapshot = await _firestore
           .collection(MyCollection.ENTRIES)
           .where('userId', isEqualTo: uid)
@@ -256,7 +300,6 @@ class AuthRepo {
         transaction.delete(doc.reference);
       }
 
-      // 3. votes (본인의 투표 기록) 삭제
       final votesSnapshot = await _firestore
           .collection(MyCollection.VOTES)
           .where('userId', isEqualTo: uid)
@@ -267,10 +310,7 @@ class AuthRepo {
       }
     });
 
-    // 4. Firebase Auth 계정 삭제
     await user.delete();
-
-    // 5. 소셜 SDK 세션 정리
     await signOut();
   }
 
@@ -286,7 +326,7 @@ class AuthRepo {
   }
 
   // =========================================================
-  // 👥 [신규 추가] 다수 유저 정보 조회 (차단 목록 표시용)
+  // 👥 다수 유저 정보 조회 (차단 목록 표시용)
   // =========================================================
   Future<List<UserModel>> fetchUsersBasicInfo(List<String> userIds) async {
     if (userIds.isEmpty) return [];
@@ -294,19 +334,17 @@ class AuthRepo {
     try {
       final List<UserModel> users = [];
 
-      // Firestore 'whereIn' 쿼리는 최대 10개까지만 지원하므로 10개씩 끊어서 조회
       for (var i = 0; i < userIds.length; i += 10) {
         final end = (i + 10 < userIds.length) ? i + 10 : userIds.length;
         final chunk = userIds.sublist(i, end);
 
         final snapshot = await _firestore
-            .collection(MyCollection.USERS) // MyCollection 상수 사용
+            .collection(MyCollection.USERS)
             .where('uid', whereIn: chunk)
             .get();
 
-        final chunkUsers = snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data()))
-            .toList();
+        final chunkUsers =
+            snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList();
 
         users.addAll(chunkUsers);
       }
