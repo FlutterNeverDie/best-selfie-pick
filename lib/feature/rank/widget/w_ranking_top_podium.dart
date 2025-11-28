@@ -362,21 +362,13 @@ class WRankingTopPodium extends ConsumerWidget {
                             BoxShadow(color: Colors.black26, blurRadius: 2.w)
                           ],
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.face_rounded,
-                                color: Colors.white, size: 10.w),
-                            SizedBox(width: 3.w),
-                            Text(
-                              "나",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          "Me",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
