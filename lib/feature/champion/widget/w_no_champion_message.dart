@@ -48,7 +48,7 @@ class WNoChampionMessage extends StatelessWidget {
 
             // 3. 서브 메시지 (참여 유도)
             Text(
-              '이번 주에 참가하고 다음 주 우승자에 도전하세요!\n투표는 매주 금요일 자정에 마감됩니다.',
+              '베스트 픽에 도전하세요!\n투표는 매주 금요일 자정에 마감됩니다.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15.sp,

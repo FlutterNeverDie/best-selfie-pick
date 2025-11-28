@@ -27,12 +27,12 @@ class VoteNotifier extends Notifier<VotingState> {
 
     // 1. 필수 데이터 (UID, Region, WeekKey) 확보
     final userId = authState.user?.uid ?? '';
-    final regionCity = authState.user?.region ?? '';
+    final userChannel = authState.user?.channel ?? '';
     final currentWeekKey = contestStatus.currentWeekKey ?? '';
 
     // 2. 초기 로드가 필요한지 판단 (Provider 생성 시점)
     if (userId.isNotEmpty &&
-        regionCity.isNotEmpty &&
+        userChannel.isNotEmpty &&
         currentWeekKey.isNotEmpty) {
       // 3. 투표 완료 여부와 후보 목록을 비동기로 로드합니다.
       Future.microtask(() => _initializeData());
@@ -47,7 +47,7 @@ class VoteNotifier extends Notifier<VotingState> {
   VoteRepository get _voteRepository => ref.read(voteRepoProvider);
   EntryRepository get _entryRepository => ref.read(entryRepoProvider);
   String get _userId => ref.read(authProvider).user!.uid;
-  String get _regionCity => ref.read(authProvider).user!.region;
+  String get _userChannel => ref.read(authProvider).user!.channel;
   String get _currentWeekKey => ref.read(contestStatusProvider).currentWeekKey!;
 
   // ====================================================================
@@ -73,7 +73,7 @@ class VoteNotifier extends Notifier<VotingState> {
   /// 투표 완료 기록이 있는지 확인하고 상태를 업데이트합니다.
   Future<void> checkIfAlreadyVoted() async {
     // 💡 Repository 접근에 필요한 값들을 ref.read로 가져옴
-    if (_userId.isEmpty || _regionCity.isEmpty || _currentWeekKey.isEmpty)
+    if (_userId.isEmpty || _userChannel.isEmpty || _currentWeekKey.isEmpty)
       return;
 
     try {
@@ -81,7 +81,7 @@ class VoteNotifier extends Notifier<VotingState> {
       final isVoted = await _voteRepository.checkIfVoted(
         _userId,
         _currentWeekKey,
-        _regionCity,
+        _userChannel,
       );
 
       // 이미 투표 완료 상태라면 isVoted를 true로 설정하여 랭킹 화면으로 전환
@@ -97,7 +97,7 @@ class VoteNotifier extends Notifier<VotingState> {
 
   /// 초기 데이터 로드 및 무한 스크롤 다음 페이지 로드 로직 통합
   Future<void> loadCandidates() async {
-    debugPrint('[지역 참가자 로드 시작...]');
+    debugPrint('[채널 참가자 로드 시작...]');
     // 💡  이미 로딩 중이거나, 페이지가 더 없으면 중단
     if (state.isLoadingNextPage || !state.hasMorePages) {
       debugPrint('로딩 중이거나 더 이상 페이지가 없습니다. 로드 중단.');
@@ -105,7 +105,7 @@ class VoteNotifier extends Notifier<VotingState> {
     }
 
     // 💡 Repository 접근에 필요한 값들을 ref.read로 가져옴
-    final regionCity = _regionCity;
+    final userChannel = _userChannel;
     final currentWeekKey = _currentWeekKey;
 
     // 🚨 로딩 시작 (가드 조건 통과 후 여기서 설정)
@@ -124,7 +124,7 @@ class VoteNotifier extends Notifier<VotingState> {
       }
 
       final snapshot = await _entryRepository.fetchCandidatesForVoting(
-        regionCity,
+        userChannel,
         currentWeekKey,
         startAfterDoc: state.lastDocument,
       );
@@ -147,7 +147,7 @@ class VoteNotifier extends Notifier<VotingState> {
             snapshot.docs.isNotEmpty ? snapshot.docs.last : state.lastDocument,
         lastFetchedTime: DateTime.now(),
       );
-      debugPrint('[지역 참가자 수: ${updatedCandidates.length}]');
+      debugPrint('[채널 참가자 수: ${updatedCandidates.length}]');
     } catch (e, stack) {
       debugPrint('Error loading 참가자 조회: $e');
       state = state.copyWith(isLoadingNextPage: false); // 로딩만 해제
@@ -194,7 +194,7 @@ class VoteNotifier extends Notifier<VotingState> {
     try {
       // 💡 Repository 접근에 필요한 값들을 ref.read로 가져옴
       final currentWeekKey = _currentWeekKey;
-      final regionCity = _regionCity;
+      final channel = _userChannel;
 
       // 1. CF 호출을 위한 데이터 변환 (금/은/동 순서 확정)
       final votesData = [
@@ -206,7 +206,7 @@ class VoteNotifier extends Notifier<VotingState> {
       // 2. Repository를 통해 CF 호출
       await _voteRepository.submitVotesToCF(
         weekKey: currentWeekKey,
-        regionId: regionCity,
+        channel: channel,
         votes: votesData.cast<Map<String, String>>(),
       );
 

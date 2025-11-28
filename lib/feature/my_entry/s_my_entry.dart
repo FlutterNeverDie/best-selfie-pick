@@ -34,7 +34,6 @@ class MyEntryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entryAsync = ref.watch(entryProvider);
-    final EntryModel? entryModel = entryAsync.value;
 
     return Scaffold(
       appBar: WMyEntryAppBar(),

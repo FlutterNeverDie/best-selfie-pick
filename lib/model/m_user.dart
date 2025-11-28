@@ -29,14 +29,14 @@ class UserModel {
   /// - 'NotSet': 초기 미설정 상태
   final String gender;
 
-  /// 사용자 활동 지역 (시/구 단위)
-  /// - 투표 권한 제한 및 지역 기반 랭킹에 사용됩니다.
+  /// 사용자 활동 채널
+  /// - 투표 권한 제한 및 채널 기반 랭킹에 사용됩니다.
   /// - 'NotSet': 초기 미설정 상태
-  final String region;
+  final String channel;
 
-  /// 지역 정보가 마지막으로 업데이트된 시각
-  /// - 지역 변경 빈도를 제한하기 위해 사용됩니다 (예: 월 1회).
-  final DateTime regionUpdatedAt;
+  ///  채널가 마지막으로 업데이트된 시각
+  /// - 채널 변경 빈도를 확인
+  final DateTime channelUpdatedAt;
 
   /// 소셜 로그인(Google, Apple 등) 여부
   final bool isSocialLogin;
@@ -77,8 +77,8 @@ class UserModel {
     required this.email,
     this.fcmToken,
     required this.gender,
-    required this.region,
-    required this.regionUpdatedAt,
+    required this.channel,
+    required this.channelUpdatedAt,
     this.isSocialLogin = false,
     this.isAdmin = false,
     this.lastEntryWeekKey,
@@ -97,7 +97,7 @@ class UserModel {
   /// - [isSocialLogin]: 소셜 로그인 여부
   /// - [isAdmin]: 관리자 여부
   ///
-  /// 성별과 지역은 'NotSet'으로 초기화되며,
+  /// 성별과 채널은 'NotSet'으로 초기화되며,
   /// 리워드 관련 필드는 모두 0으로 시작합니다.
   factory UserModel.initial({
     required String uid,
@@ -110,9 +110,9 @@ class UserModel {
       email: email,
       fcmToken: null,
       gender: 'NotSet',
-      region: 'NotSet',
+      channel: 'NotSet',
       // 초기에는 변경 가능하도록 1년 전으로 설정 (월 1회 제한을 바로 통과하기 위함)
-      regionUpdatedAt: DateTime.now().subtract(const Duration(days: 365)),
+      channelUpdatedAt: DateTime.now().subtract(const Duration(days: 365)),
       isSocialLogin: isSocialLogin,
       isAdmin: isAdmin,
       lastEntryWeekKey: null,
@@ -124,10 +124,10 @@ class UserModel {
     );
   }
 
-  /// 프로필 정보(성별 또는 지역)가 미설정 상태인지 확인합니다.
+  /// 프로필 정보(성별 또는 채널)가 미설정 상태인지 확인합니다.
   ///
   /// true일 경우 사용자는 추가 정보를 입력해야 앱의 주요 기능을 사용할 수 있습니다.
-  bool get isProfileIncomplete => gender == 'NotSet' || region == 'NotSet';
+  bool get isProfileIncomplete => gender == 'NotSet' || channel == 'NotSet';
 
   /// Firestore 문서 데이터(Map)를 [UserModel] 객체로 변환합니다.
   ///
@@ -135,14 +135,14 @@ class UserModel {
   /// - 기존 사용자의 경우 리워드 필드가 없을 수 있으므로 `?? 0`으로 안전하게 처리합니다.
   factory UserModel.fromMap(Map<String, dynamic> map) {
     // Firestore Timestamp를 DateTime으로 변환
-    final regionTimestamp = map['regionUpdatedAt'];
-    DateTime regionDate;
+    final channelTimestamp = map['channelUpdatedAt'];
+    DateTime channelDate;
 
-    if (regionTimestamp is Timestamp) {
-      regionDate = regionTimestamp.toDate();
+    if (channelTimestamp is Timestamp) {
+      channelDate = channelTimestamp.toDate();
     } else {
       // 안전 장치: 만약 Timestamp가 아닌 다른 형태이거나 null인 경우 기본값 설정
-      regionDate = DateTime.now().subtract(const Duration(days: 365));
+      channelDate = DateTime.now().subtract(const Duration(days: 365));
     }
 
     return UserModel(
@@ -150,8 +150,8 @@ class UserModel {
       email: map['email'] as String,
       fcmToken: map['fcmToken'] as String?,
       gender: map['gender'] as String,
-      region: map['region'] as String,
-      regionUpdatedAt: regionDate,
+      channel: map['channel'] as String,
+      channelUpdatedAt: channelDate,
       isSocialLogin: map['isSocialLogin'] ?? false,
       isAdmin: map['isAdmin'] ?? false,
       lastEntryWeekKey: map['lastEntryWeekKey'] as String?,
@@ -171,8 +171,8 @@ class UserModel {
       'email': email,
       'fcmToken': fcmToken,
       'gender': gender,
-      'region': region,
-      'regionUpdatedAt': Timestamp.fromDate(regionUpdatedAt),
+      'channel': channel,
+      'channelUpdatedAt': Timestamp.fromDate(channelUpdatedAt),
       'isSocialLogin': isSocialLogin,
       'isAdmin': isAdmin,
       'lastEntryWeekKey': lastEntryWeekKey,
@@ -191,8 +191,8 @@ class UserModel {
     String? email,
     String? fcmToken,
     String? gender,
-    String? region,
-    DateTime? regionUpdatedAt,
+    String? channel,
+    DateTime? channelUpdatedAt,
     bool? isSocialLogin,
     String? lastEntryWeekKey,
     int? honorScore,
@@ -206,8 +206,8 @@ class UserModel {
       email: email ?? this.email,
       fcmToken: fcmToken ?? this.fcmToken,
       gender: gender ?? this.gender,
-      region: region ?? this.region,
-      regionUpdatedAt: regionUpdatedAt ?? this.regionUpdatedAt,
+      channel: channel ?? this.channel,
+      channelUpdatedAt: channelUpdatedAt ?? this.channelUpdatedAt,
       isSocialLogin: isSocialLogin ?? this.isSocialLogin,
       isAdmin: isAdmin,
       lastEntryWeekKey: lastEntryWeekKey ?? this.lastEntryWeekKey,
@@ -222,7 +222,7 @@ class UserModel {
   /// 객체의 문자열 표현을 반환합니다. (디버깅 용도)
   @override
   String toString() {
-    return 'UserModel(uid: $uid, email: $email, gender: $gender, region: $region, '
+    return 'UserModel(uid: $uid, email: $email, gender: $gender, channel: $channel, '
         'honor: $honorScore, points: $points, badges: G:$badgeGold/S:$badgeSilver/B:$badgeBronze)';
   }
 }

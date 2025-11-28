@@ -60,9 +60,9 @@ class _WEntryNotEnteredViewState extends ConsumerState<WEntryNotEnteredView> wit
     final ContestStatusModel contestStatus = ref.watch(contestStatusProvider);
     final userState = ref.watch(authProvider);
 
-    final String userRegion = (userState.user?.region == 'NotSet' || userState.user?.region == null)
-        ? '지역 미설정'
-        : userState.user!.region;
+    final String userRegion = (userState.user?.channel == 'NotSet' || userState.user?.channel == null)
+        ? '채널 미설정'
+        : userState.user!.channel;
 
     final bool isContestActive = contestStatus.currentWeekKey != null;
 
@@ -73,7 +73,7 @@ class _WEntryNotEnteredViewState extends ConsumerState<WEntryNotEnteredView> wit
         children: [
           SizedBox(height: 80.h),
 
-          // 1. 📍 지역 배지
+          // 1. 📍 채널 배지
           if (isContestActive)
             Container(
               margin: EdgeInsets.only(bottom: 24.h),
@@ -156,7 +156,7 @@ class _WEntryNotEnteredViewState extends ConsumerState<WEntryNotEnteredView> wit
             ),
             SizedBox(height: 10.h),
             Text(
-              "가장 자신 있는 사진을 올리고\n$userRegion 지역의 베스트 픽이 되어보세요.",
+              "가장 자신 있는 사진을 올리고\n$userRegion 채널의 베스트 픽이 되어보세요.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15.sp,

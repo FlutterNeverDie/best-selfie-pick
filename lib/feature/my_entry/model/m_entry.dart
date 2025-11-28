@@ -5,7 +5,7 @@ class EntryModel {
   // DB 필드
   final String entryId;
   final String userId;
-  final String regionCity; // 참가 지역
+  final String channel; // 참가 채널
   final String weekKey; // 참가 회차
   final String thumbnailUrl;
   final String snsId;
@@ -22,7 +22,7 @@ class EntryModel {
   const EntryModel({
     required this.entryId,
     required this.userId,
-    required this.regionCity,
+    required this.channel,
     required this.weekKey,
     required this.thumbnailUrl,
     required this.snsId,
@@ -40,7 +40,7 @@ class EntryModel {
     return EntryModel(
       entryId: docId,
       userId: map['userId'] as String? ?? '',
-      regionCity: map['regionCity'] as String? ?? '',
+      channel: map['channel'] as String? ?? '',
       weekKey: map['weekKey'] as String? ?? '',
       thumbnailUrl: map['thumbnailUrl'] as String? ?? '',
       snsId: map['snsId'] as String? ?? '',
@@ -58,7 +58,7 @@ class EntryModel {
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
-      'regionCity': regionCity,
+      'channel': channel,
       'weekKey': weekKey,
       'thumbnailUrl': thumbnailUrl,
       'snsId': snsId,
@@ -76,7 +76,7 @@ class EntryModel {
   EntryModel copyWith({
     String? entryId,
     String? userId,
-    String? regionCity,
+    String? channel,
     String? weekKey,
     String? photoUrl,
     String? thumbnailUrl,
@@ -92,7 +92,7 @@ class EntryModel {
     return EntryModel(
       entryId: entryId ?? this.entryId,
       userId: userId ?? this.userId,
-      regionCity: regionCity ?? this.regionCity,
+      channel: channel ?? this.channel,
       weekKey: weekKey ?? this.weekKey,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       snsId: snsId ?? this.snsId,
@@ -108,6 +108,6 @@ class EntryModel {
 
   @override
   String toString() {
-    return 'EntryModel(entryId: $entryId, userId: $userId, regionCity: $regionCity, weekKey: $weekKey,  thumbnailUrl: $thumbnailUrl, snsId: $snsId, createdAt: $createdAt, status: $status, goldVotes: $goldVotes, silverVotes: $silverVotes, bronzeVotes: $bronzeVotes, totalScore: $totalScore)';
+    return 'EntryModel(entryId: $entryId, userId: $userId, channel: $channel, weekKey: $weekKey,  thumbnailUrl: $thumbnailUrl, snsId: $snsId, createdAt: $createdAt, status: $status, goldVotes: $goldVotes, silverVotes: $silverVotes, bronzeVotes: $bronzeVotes, totalScore: $totalScore)';
   }
 }

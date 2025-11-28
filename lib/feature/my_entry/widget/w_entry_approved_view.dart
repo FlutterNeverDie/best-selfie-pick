@@ -31,7 +31,7 @@ class WEntryApprovedView extends ConsumerWidget {
           // 1. ✨ 라이브 헤더
           WEntryLiveHeader(
             weekKey: currentEntry.weekKey,
-            regionCity: currentEntry.regionCity,
+            channel: currentEntry.channel,
             isPrivate: !isApproved, // 승인 상태가 아니면(private) 비공개
           ),
 

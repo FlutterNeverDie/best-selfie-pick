@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/colors/app_color.dart';
 import '../../../../model/m_user.dart';
-import '../dialog/d_region_change.dart';
+import '../dialog/d_channel_change.dart';
 
 class WMyPageProfileCard extends StatelessWidget {
   final UserModel? user;
 
   const WMyPageProfileCard({super.key, required this.user});
 
-  // 💡 지역 변경 다이얼로그 호출
-  void _showRegionChangeDialog(BuildContext context) {
+  // 💡 채널 변경 다이얼로그 호출
+  void _showChannelChangeDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => const RegionChangeDialog(),
+      routeSettings: const RouteSettings(name: 'ChannelChangeDialog'),
+      builder: (context) => const ChannelChangeDialog(),
     );
   }
 
@@ -76,12 +77,12 @@ class WMyPageProfileCard extends StatelessWidget {
                 // 뱃지 Row
                 Row(
                   children: [
-                    // 📍 지역 뱃지 (클릭 가능)
+                    // 📍 채널 뱃지 (클릭 가능)
                     GestureDetector(
-                      onTap: () => _showRegionChangeDialog(context),
+                      onTap: () => _showChannelChangeDialog(context),
                       child: _buildInfoBadge(
                         icon: Icons.location_on_rounded,
-                        text: user?.region == 'NotSet' ? '지역 설정' : (user?.region ?? '미설정'),
+                        text: user?.channel == 'NotSet' ? '채널 설정' : (user?.channel ?? '미설정'),
                         color: Colors.white,
                         bgColor: AppColor.primary,
                         showEditIcon: true, // 연필 아이콘

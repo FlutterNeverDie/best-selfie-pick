@@ -31,15 +31,15 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
 
     final userId = authState.user!.uid;
     final currentWeekKey = contestStatus.currentWeekKey!;
-    final currentUserRegion = userModel.region;
+    final currentUserChannel = userModel.channel;
 
-    // 3. 현재 주차, 현재 지역, 현재 사용자의 참가 내역 조회 시도
-    // 💡 V3.0 핵심: 이 쿼리가 null을 반환하면 미참가로 간주됨 (지난 회차/다른 지역 기록 자동 제외)
+    // 3. 현재 주차, 현재 채, 현재 사용자의 참가 내역 조회 시도
+    // 💡 V3.0 핵심: 이 쿼리가 null을 반환하면 미참가로 간주됨 (지난 회차/다른 채 기록 자동 제외)
     try {
       final currentEntry = await _repository.fetchCurrentEntry(
         userId,
         currentWeekKey,
-        currentUserRegion, // 현재 유저의 설정 지역으로 조회 (지역 종속성)
+        currentUserChannel, // 현재 유저의 설정 채널으로 조회 (채널 종속성)
       );
 
 
@@ -61,12 +61,12 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
     final user = ref.read(authProvider).user; // UserModel 로드
     final currentEntry = state.value;
 
-    if (user == null || user.region == 'NotSet') {
-      debugPrint('$methodName: [에러] 사용자 정보 및 지역 설정이 유효하지 않습니다.');
-      throw Exception('로그인 정보 및 지역 설정이 유효하지 않습니다. 마이페이지를 확인해주세요.');
+    if (user == null || user.channel == 'NotSet') {
+      debugPrint('$methodName: [에러] 사용자 정보 및 채 설정이 유효하지 않습니다.');
+      throw Exception('로그인 정보 및 채 설정이 유효하지 않습니다. 마이페이지를 확인해주세요.');
     }
 
-    // 💡 V3.0: 현재 회차, 현재 지역에 이미 참가 중인지 확인 (단일 참가 강제)
+    // 💡 V3.0: 현재 회차, 현재 채널에 이미 참가 중인지 확인 (단일 참가 강제)
     if (currentEntry != null && currentEntry.status != 'completed') {
 // 🚨 새로 추가된 로직: Rejected 상태라면 기존 데이터 삭제 후 재신청 허용
       if (currentEntry.status == 'rejected') {
@@ -94,19 +94,19 @@ class EntryNotifier extends AsyncNotifier<EntryModel?> {
           '$methodName: [요청] Cloud Storage 사진 업로드 시작 (UserID: ${user.uid}, FileSize: ${photo.lengthSync() / 1024} KB)');
 
       final photoUrls =
-          await _repository.uploadPhoto(user.email, photo, user.region, snsId);
+          await _repository.uploadPhoto(user.email, photo, user.channel, snsId);
 
       debugPrint(
           '$methodName: [응답] Cloud Storage 업로드 완료. PhotoUrl: ${photoUrls['photoUrl']!}');
 
-      // 4. Firestore에 참가 신청 데이터 저장 (regionCity는 UserModel의 지역을 따름)
+      // 4. Firestore에 참가 신청 데이터 저장 (regionCity는 UserModel의 채널을 따름)
       debugPrint(
-          '$methodName: [요청] Firestore 참가 신청 데이터 저장 시작 (지역: ${user.region}, SNS ID: $snsId)');
+          '$methodName: [요청] Firestore 참가 신청 데이터 저장 시작 (채널: ${user.channel}, SNS ID: $snsId)');
 
       final newEntry = await _repository.saveEntry(
         userId: user.uid,
-        regionCity: user.region,
-        // 사용자의 현재 지역을 참가 지역으로 설정
+        regionCity: user.channel,
+        // 사용자의 현재 채널을 참가 채널으로 설정
         photoUrl: photoUrls['photoUrl']!,
         thumbnailUrl: photoUrls['thumbnailUrl']!,
         snsId: snsId,

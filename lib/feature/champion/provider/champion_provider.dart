@@ -20,13 +20,13 @@ class ChampionNotifier extends Notifier<ChampionState> {
     final authState = ref.watch(authProvider);
     final contestStatus = ref.watch(contestStatusProvider);
 
-    final String? userRegion = authState.user?.region;
+    final String? userRegion = authState.user?.channel;
     final String? lastSettledWeekKey = contestStatus.lastSettledWeekKey;
 
     // 2. 필수 조건 확인
     if (userRegion == null || lastSettledWeekKey == null) {
       // 필수 정보가 로드되지 않았을 경우, 에러 상태를 동기적으로 반환합니다.
-      return const ChampionState(error: '지역 설정 또는 정산 정보가 로드되지 않았습니다.');
+      return const ChampionState(error: '채널 설정 또는 정산 정보가 로드되지 않았습니다.');
     }
 
     // 3. Future.microtask로 초기 비동기 로드 호출
@@ -38,7 +38,7 @@ class ChampionNotifier extends Notifier<ChampionState> {
   }
 
   Future<void> _loadChampions(
-      String userRegion, String lastSettledWeekKey) async {
+      String userChannel, String lastSettledWeekKey) async {
     // 💡 강화된 중복 호출 방지 가드:
     // build()에서 이미 isLoading: true를 반환했기 때문에,
     // 로직이 정상적으로 실행될 경우 이 가드에 걸려 바로 종료됩니다.
@@ -49,9 +49,9 @@ class ChampionNotifier extends Notifier<ChampionState> {
     }
 
     try {
-      // 2. Repository 호출: 현재 사용자 지역의 지난 정산 결과를 요청
+      // 2. Repository 호출: 현재 사용자 채널의 지난 정산 결과를 요청
       final champions =
-          await _repository.fetchChampions(userRegion, lastSettledWeekKey);
+          await _repository.fetchChampions(userChannel, lastSettledWeekKey);
 
       // 3. 로딩 상태 해제 및 결과 반영
       state = state.copyWith(

@@ -52,8 +52,8 @@ class AuthRepo {
         uid: user.uid,
         email: email,
         gender: gender,
-        region: region,
-        regionUpdatedAt: DateTime.now(),
+        channel: region,
+        channelUpdatedAt: DateTime.now(),
         fcmToken: null, // 초기 가입 시에는 null
       );
 
@@ -113,8 +113,8 @@ class AuthRepo {
           uid: uid,
           email: email,
           gender: gender,
-          region: region,
-          regionUpdatedAt: DateTime.now(),
+          channel: region,
+          channelUpdatedAt: DateTime.now(),
           fcmToken: null,
           isSocialLogin: true);
 
@@ -309,15 +309,15 @@ class AuthRepo {
     await signOut();
   }
 
-  Future<void> updateUserRegion(String uid, String newRegion) async {
+  Future<void> updateUserChannel(String uid, String newChannel) async {
     try {
       await _firestore.collection(MyCollection.USERS).doc(uid).update({
-        'region': newRegion,
-        'regionUpdatedAt':
+        'channel': newChannel,
+        'channelUpdatedAt':
             FieldValue.serverTimestamp(), // 변경 시간 기록 (나중에 쿨타임 적용 등에 활용 가능)
       });
     } catch (e) {
-      throw Exception('지역 정보를 업데이트하는 중 오류가 발생했습니다: $e');
+      throw Exception('채널 정보를 업데이트하는 중 오류가 발생했습니다: $e');
     }
   }
 }

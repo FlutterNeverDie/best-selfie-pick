@@ -8,15 +8,15 @@ import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import '../../../core/data/area.data.dart';
 import '../../../shared/service/ad_service.dart';
 
-class RegionChangeDialog extends ConsumerStatefulWidget {
-  const RegionChangeDialog({super.key});
+class ChannelChangeDialog extends ConsumerStatefulWidget {
+  const ChannelChangeDialog({super.key});
 
   @override
-  ConsumerState<RegionChangeDialog> createState() => _RegionChangeDialogState();
+  ConsumerState<ChannelChangeDialog> createState() => _ChannelChangeDialogState();
 }
 
-class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
-  String? _selectedRegion;
+class _ChannelChangeDialogState extends ConsumerState<ChannelChangeDialog> {
+  String? _selectedChannel;
   bool _isUpdating = false;
   bool _isAdLoading = true;
 
@@ -26,8 +26,8 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
   void initState() {
     super.initState();
     final currentUser = ref.read(authProvider).user;
-    if (currentUser != null && currentUser.region != 'NotSet') {
-      _selectedRegion = currentUser.region;
+    if (currentUser != null && currentUser.channel != 'NotSet') {
+      _selectedChannel = currentUser.channel;
     }
 
     // 💡 [수정] 30초 리워드 대신 '스킵 가능한 리워드 전면 광고' 로드
@@ -56,17 +56,17 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
   }
 
   Future<void> _confirmChange() async {
-    if (_selectedRegion == null) return;
+    if (_selectedChannel == null) return;
 
     setState(() => _isUpdating = true);
 
     try {
-      await ref.read(authProvider.notifier).updateRegion(_selectedRegion!);
+      await ref.read(authProvider.notifier).updateChannel(_selectedChannel!);
 
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('지역이 $_selectedRegion(으)로 변경되었습니다.')),
+          SnackBar(content: Text('채널이 $_selectedChannel(으)로 변경되었습니다.')),
         );
       }
     } catch (e) {
@@ -81,7 +81,7 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
   }
 
   void _onConfirmPressed() {
-    if (_selectedRegion == null) return;
+    if (_selectedChannel == null) return;
 
     // 💡 [수정] showRewardedAd -> showRewardedInterstitialAd 사용
     _adService.showRewardedInterstitialAd(
@@ -110,7 +110,7 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '활동 지역 변경',
+              '활동 채널 변경',
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.h),
@@ -132,12 +132,12 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
                 itemCount: areasGlobalList.length,
                 itemBuilder: (context, index) {
                   final region = areasGlobalList[index];
-                  final isSelected = _selectedRegion == region;
+                  final isSelected = _selectedChannel == region;
 
                   return InkWell(
                     onTap: () {
                       setState(() {
-                        _selectedRegion = region;
+                        _selectedChannel = region;
                       });
                     },
                     borderRadius: BorderRadius.circular(8.w),
@@ -181,7 +181,7 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
                 SizedBox(width: 12.w),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: (_isUpdating || _isAdLoading || _selectedRegion == null)
+                    onPressed: (_isUpdating || _isAdLoading || _selectedChannel == null)
                         ? null
                         : _onConfirmPressed,
                     style: ElevatedButton.styleFrom(
@@ -198,7 +198,7 @@ class _RegionChangeDialogState extends ConsumerState<RegionChangeDialog> {
                       width: 20.w,
                       child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
-                        : const Text('지역 변경', style: TextStyle(fontWeight: FontWeight.bold)),
+                        : const Text('채널 변경', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

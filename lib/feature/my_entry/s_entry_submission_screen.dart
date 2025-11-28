@@ -11,9 +11,9 @@ class EntrySubmissionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 💡 현재 로그인된 유저의 지역 정보를 가져옵니다.
+    // 💡 현재 로그인된 유저의 채 정보를 가져옵니다.
     final user = ref.watch(authProvider).user;
-    final userRegion = user?.region ?? '지역 미설정';
+    final userChannel = user?.channel ?? '채널 미설정';
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50, // 배경을 아주 연한 회색으로 주어 폼과 구분감 형성
@@ -38,7 +38,7 @@ class EntrySubmissionScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. 📍 현재 참가 지역 확인 배지
+              // 1. 📍 현재 참가 채 확인 배지
               // 경고 문구 대신, "내가 어디에 내는지"를 깔끔하게 보여줍니다.
               Center(
                 child: Container(
@@ -61,7 +61,7 @@ class EntrySubmissionScreen extends ConsumerWidget {
                       Icon(Icons.location_on_rounded, size: 16.w, color: AppColor.primary),
                       SizedBox(width: 6.w),
                       Text(
-                        '현재 참가 지역 : ',
+                        '현재 참가 채널 : ',
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: Colors.grey.shade600,
@@ -69,7 +69,7 @@ class EntrySubmissionScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        userRegion,
+                        userChannel,
                         style: TextStyle(
                             fontSize: 14.sp,
                             color: AppColor.primary,

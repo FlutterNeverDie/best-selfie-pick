@@ -157,10 +157,10 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final isRegionSet = user != null && user.region != 'NotSet';
+    final isRegionSet = user != null && user.channel != 'NotSet';
 
     if (!isRegionSet) {
-      return _buildRegionNotSetView(context);
+      return _buildChannelNotSetView(context);
     }
 
     // Stack 제거 -> SingleChildScrollView만 사용
@@ -407,16 +407,16 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
     );
   }
 
-  Widget _buildRegionNotSetView(BuildContext context) {
+  Widget _buildChannelNotSetView(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.location_off_outlined, size: 60.w, color: Colors.grey),
           SizedBox(height: 16.h),
-          Text('지역 설정이 필요해요', style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
+          Text('채널 설정이 필요해요', style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
           SizedBox(height: 8.h),
-          Text('참가 신청을 위해 마이페이지에서\n나의 활동 지역을 설정해 주세요.',
+          Text('참가 신청을 위해 마이페이지에서\n나의 활동 채널 설정해 주세요.',
               textAlign: TextAlign.center, style: TextStyle(fontSize: 14.sp, color: Colors.grey[600], height: 1.4)),
           SizedBox(height: 24.h),
           ElevatedButton(
@@ -427,7 +427,7 @@ class _WEntrySubmissionFormState extends ConsumerState<WEntrySubmissionForm> {
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.w)),
             ),
-            child: Text('지역 설정하러 가기', style: TextStyle(fontSize: 16.sp)),
+            child: Text('채널 설정하러 가기', style: TextStyle(fontSize: 16.sp)),
           )
         ],
       ),

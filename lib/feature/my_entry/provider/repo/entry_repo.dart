@@ -38,7 +38,7 @@ class EntryRepository {
           .collection(MyCollection.ENTRIES)
           .where('userId', isEqualTo: userId)
           .where('weekKey', isEqualTo: weekKey)
-          .where('regionCity', isEqualTo: regionCity)
+          .where('channel', isEqualTo: regionCity)
           .limit(1)
           .get();
 
@@ -150,7 +150,7 @@ class EntryRepository {
       entryId: '',
       // Firestore가 ID를 할당할 예정
       userId: userId,
-      regionCity: regionCity,
+      channel: regionCity,
       thumbnailUrl: thumbnailUrl,
       snsId: snsId,
       snsUrl: snsUrl,
@@ -211,7 +211,7 @@ class EntryRepository {
     // ... (로직 유지)
     Query query = _firestore
         .collection(MyCollection.ENTRIES)
-        .where('regionCity', isEqualTo: regionCity)
+        .where('channel', isEqualTo: regionCity)
         .where('weekKey', isEqualTo: weekKey)
         .where('status', isEqualTo: 'approved')
         .orderBy('totalScore', descending: true);

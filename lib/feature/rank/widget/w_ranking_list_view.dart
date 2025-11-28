@@ -42,8 +42,8 @@ class WRankingListView extends ConsumerWidget {
     final topThree = rankingData.take(3).toList();
     final challengers = rankingData.skip(3).toList();
 
-    // 지역
-    final region = ref.read(authProvider).user!.region ?? '??';
+    // 채널
+    final channel = ref.read(authProvider).user!.channel ?? '??';
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -65,7 +65,7 @@ class WRankingListView extends ConsumerWidget {
             ),
 
             // 3. 시상대 위젯 (타이머 포함)
-            if (topThree.isNotEmpty) WRankingTopPodium(topThree: topThree,region : region ),
+            if (topThree.isNotEmpty) WRankingTopPodium(topThree: topThree,channel : channel ),
 
             // 4. 나머지 참가자 섹션
             if (challengers.isNotEmpty) ...[

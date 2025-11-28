@@ -26,7 +26,7 @@ class ChampionRepository {
     try {
       final championDocId = '${region}_$weekKey';
 
-      // 1. champions/지역_주차 문서 조회
+      // 1. champions/채널_주차 문서 조회
       final docSnapshot = await _firestore
           .collection(MyCollection.CHAMPION)
           .doc(championDocId)

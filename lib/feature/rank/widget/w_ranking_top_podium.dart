@@ -11,10 +11,10 @@ import '../provider/dialog/d_ranking_image_detail.dart'; // 다이얼로그 impo
 
 class WRankingTopPodium extends StatelessWidget {
   final List<EntryModel> topThree;
-  final String region;
+  final String channel;
 
   const WRankingTopPodium(
-      {super.key, required this.topThree, required this.region});
+      {super.key, required this.topThree, required this.channel});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class WRankingTopPodium extends StatelessWidget {
               children: [
                 TextGradiate(
                   text: Text(
-                    '실시간 ${region} 랭킹',
+                    '실시간 ${channel} 랭킹',
                     style:
                         TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
                   ),

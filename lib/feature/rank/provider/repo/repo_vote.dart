@@ -16,12 +16,12 @@ class VoteRepository {
 
   VoteRepository(this._firestore);
 
-  /// 2. 투표 완료 여부 확인 (V3.0: 주차별 지역당 1회 투표)
+  /// 2. 투표 완료 여부 확인 (V3.0: 주차별 채널당 1회 투표)
   /// * submitVote 함수와 동일한 검증 로직을 사용합니다.
   Future<bool> checkIfVoted(
       String userId, String weekKey, String regionId) async {
     try {
-      // 💡 votes_record 컬렉션에서 해당 사용자가 이 주차, 이 지역에 투표했는지 확인
+      // 💡 votes_record 컬렉션에서 해당 사용자가 이 주차, 이 채널에 투표했는지 확인
       final querySnapshot = await _firestore
           .collection(MyCollection.VOTES)
           .where('userId', isEqualTo: userId)
@@ -47,7 +47,7 @@ class VoteRepository {
   /// * Cloud Functions 대신 클라이언트에서 직접 트랜잭션을 수행합니다.
   Future<void> submitVotesToCF({
     required String weekKey,
-    required String regionId,
+    required String channel,
     required List<Map<String, String>> votes,
   }) async {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -82,7 +82,7 @@ class VoteRepository {
           transaction.set(voteRef, {
             'userId': userId,
             'weekKey': weekKey,
-            'regionId': regionId,
+            'channel': channel,
             'entryId': entryId,
             'voteType': voteType,
             'createdAt': FieldValue.serverTimestamp(),
@@ -122,7 +122,7 @@ class VoteRepository {
         transaction.set(recordRef, {
           'userId': userId,
           'weekKey': weekKey,
-          'regionId': regionId,
+          'regionId': channel,
           'votedAt': FieldValue.serverTimestamp(),
         });
       });

@@ -54,7 +54,7 @@ class WChampionPodium extends ConsumerWidget {
           children: [
             SizedBox(height: 20.h),
 
-            // 1. 헤더: 구체적인 타이틀 (년도/주차/지역)
+            // 1. 헤더: 구체적인 타이틀 (년도/주차/채)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Text(
@@ -146,7 +146,7 @@ class WChampionPodium extends ConsumerWidget {
 
             // 혜택 내용 수정
             Text(
-              '각 지역 상위 3명의 유저에게는\n순위에 맞는 스페셜 뱃지가 수여됩니다.',
+              '각 채널 상위 3명의 유저에게는\n순위에 맞는 스페셜 뱃지가 수여됩니다.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14.sp,

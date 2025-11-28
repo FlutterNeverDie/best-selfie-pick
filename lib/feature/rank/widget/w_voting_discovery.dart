@@ -14,7 +14,7 @@ class WVotingDiscovery extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(voteProvider);
-    final currentUserRegion = ref.watch(authProvider.select((state) => state.user?.region)) ?? '지역 미설정';
+    final currentUserChannel = ref.watch(authProvider.select((state) => state.user?.channel)) ?? '채널 미설정';
 
     final bool noCandidatesFound = status.candidates.isEmpty &&
         !status.hasMorePages &&
@@ -22,7 +22,7 @@ class WVotingDiscovery extends ConsumerWidget {
 
     return Column(
       children: [
-        // 1. ✨ 지역명 헤더
+        // 1. ✨ 채널명 헤더
         Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
@@ -35,12 +35,17 @@ class WVotingDiscovery extends ConsumerWidget {
               Icon(Icons.location_on, size: 20.w, color: AppColor.primary),
               SizedBox(width: 6.w),
               Text(
-                currentUserRegion,
+                currentUserChannel,
                 style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
-              Text(
-                ' 지역의 후보를 선택해주세요',
-                style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+              Column(
+                children: [
+                  Text(
+                    ' 채널의 후보를 선택해주세요',
+                    style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+                  ),
+
+                ],
               ),
             ],
           ),

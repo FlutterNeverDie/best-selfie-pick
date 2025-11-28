@@ -7,7 +7,7 @@ import '../../core/data/area.data.dart';
 import '../../core/theme/colors/app_color.dart';
 import '../auth/provider/auth_notifier.dart'; 
 
-// NOTE: 이 파일은 소셜 로그인 후 필수 정보 (지역/성별) 입력을 위한 전용 화면입니다.
+// NOTE: 이 파일은 소셜 로그인 후 필수 정보 (채널/성별) 입력을 위한 전용 화면입니다.
 class SocialProfileSetupScreen extends ConsumerStatefulWidget {
   const SocialProfileSetupScreen({super.key});
 
@@ -23,7 +23,7 @@ class _SocialProfileSetupScreenState
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   // 최종 회원가입 정보
-  String? _selectedRegion;
+  String? _selectedChannel;
   String? _selectedGender = 'Female'; // 기본값 여성
 
   @override
@@ -41,8 +41,8 @@ class _SocialProfileSetupScreenState
   // --- 🎯 최종 프로필 업데이트 핸들러 ---
   Future<void> _handleFinalProfileSetup() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedRegion == null || _selectedGender == null) {
-      _showMessage('거주 지역과 성별을 선택해주세요.');
+    if (_selectedChannel == null || _selectedGender == null) {
+      _showMessage('채널과 성별을 선택해주세요.');
       return;
     }
 
@@ -62,7 +62,7 @@ class _SocialProfileSetupScreenState
       // 🎯 AuthNotifier의 completeSocialSignUp 함수 호출
       // 이 함수는 Repository를 통해 Firestore에 최종 UserModel 문서를 저장하고 상태를 업데이트합니다.
       await ref.read(authProvider.notifier).completeSocialSignUp(
-        _selectedRegion!,
+        _selectedChannel!,
         _selectedGender!,
       );
 
@@ -93,13 +93,13 @@ class _SocialProfileSetupScreenState
         ),
         SizedBox(height: 30.h),
 
-        // 지역 선택
-        Text('거주 지역 선택 (투표 권한 설정)',
+        // 채널 선택
+        Text('채널 선택 (투표 권한 설정)',
             style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
         SizedBox(height: 8.h),
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
-            hintText: '지역 선택',
+            hintText: '채널 선택',
             filled: true,
             fillColor: Colors.grey.shade100,
             border: OutlineInputBorder(
@@ -107,7 +107,7 @@ class _SocialProfileSetupScreenState
               borderSide: BorderSide.none,
             ),
           ),
-          value: _selectedRegion,
+          value: _selectedChannel,
           items: areasGlobalList
               .map((region) => DropdownMenuItem(
             value: region,
@@ -115,9 +115,9 @@ class _SocialProfileSetupScreenState
           ))
               .toList(),
           onChanged: (value) {
-            setState(() => _selectedRegion = value);
+            setState(() => _selectedChannel = value);
           },
-          validator: (v) => v == null ? '지역을 선택해주세요' : null,
+          validator: (v) => v == null ? '채널을 선택해주세요' : null,
         ),
         SizedBox(height: 24.h),
 

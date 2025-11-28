@@ -164,7 +164,7 @@ class _WEntryPendingViewState extends ConsumerState<WEntryPendingView> with Sing
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                   child: Divider(color: Colors.grey[300], height: 1),
                 ),
-                _buildInfoRow(Icons.location_on_rounded, '참가 지역', widget.entry.regionCity),
+                _buildInfoRow(Icons.location_on_rounded, '참가 채널', widget.entry.channel),
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                   child: Divider(color: Colors.grey[300], height: 1),

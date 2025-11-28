@@ -4,13 +4,13 @@ import '../../../../core/theme/colors/app_color.dart';
 
 class WEntryLiveHeader extends StatefulWidget {
   final String weekKey;
-  final String regionCity;
+  final String channel;
   final bool isPrivate;
 
   const WEntryLiveHeader({
     super.key,
     required this.weekKey,
-    required this.regionCity,
+    required this.channel,
     required this.isPrivate,
   });
 
@@ -41,7 +41,7 @@ class _WEntryLiveHeaderState extends State<WEntryLiveHeader> with SingleTickerPr
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // 1. 지역 및 회차 정보
+        // 1. 채널 및 회차 정보
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -60,7 +60,7 @@ class _WEntryLiveHeaderState extends State<WEntryLiveHeader> with SingleTickerPr
                 Icon(Icons.location_on_rounded, size: 18.w, color: Colors.black87),
                 SizedBox(width: 4.w),
                 Text(
-                  widget.regionCity,
+                  widget.channel,
                   style: TextStyle(
                     fontSize: 22.sp,
                     fontWeight: FontWeight.w800,

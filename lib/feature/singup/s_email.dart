@@ -27,7 +27,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-  String? _selectedRegion;
+  String? _selectedChannel;
   String _selectedGender = 'Female';
 
   bool _isPasswordVisible = false;
@@ -51,19 +51,19 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     );
   }
 
-  // --- 🎯 지역 선택 다이얼로그 호출 ---
-  Future<void> _showRegionDialog() async {
+  // --- 🎯  선택 다이얼로그 호출 ---
+  Future<void> _showChannelDialog() async {
     // 다이얼로그를 띄우고 결과를 기다림
     final result = await showDialog<String>(
       context: context,
-      routeSettings:  const RouteSettings(name: 'region_selection_dialog'),
-      builder: (context) => RegionSelectionDialog(initialRegion: _selectedRegion),
+      routeSettings:  const RouteSettings(name: ChannelSelectionDialog.routeName),
+      builder: (context) => ChannelSelectionDialog(initialChannel: _selectedChannel),
     );
 
     // 결과가 있으면 상태 업데이트
     if (result != null) {
       setState(() {
-        _selectedRegion = result;
+        _selectedChannel = result;
       });
     }
   }
@@ -95,8 +95,8 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
   // --- 🎯 2단계 핸들러 ---
   Future<void> _handleFinalSignUp() async {
-    if (_selectedRegion == null) {
-      _showMessage('거주 지역을 선택해주세요.');
+    if (_selectedChannel == null) {
+      _showMessage('채널을 선택해주세요.');
       return;
     }
 
@@ -107,7 +107,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
       await ref.read(authProvider.notifier).signUp(
         email,
         password,
-        _selectedRegion!,
+        _selectedChannel!,
         _selectedGender,
       );
 
@@ -248,11 +248,11 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         Text('원활한 활동을 위해 필수 정보를 알려주세요.', style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600)),
         SizedBox(height: 30.h),
 
-        // 💡 지역 선택 (GestureDetector + 다이얼로그)
-        Text('거주 지역', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+        // 💡 채널 선택 (GestureDetector + 다이얼로그)
+        Text('채널', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 8.h),
         GestureDetector(
-          onTap: _showRegionDialog, // 다이얼로그 호출
+          onTap: _showChannelDialog, // 다이얼로그 호출
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
             decoration: BoxDecoration(
@@ -262,14 +262,14 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.location_on_outlined, color: _selectedRegion != null ? AppColor.primary : Colors.grey.shade400, size: 22.sp),
+                Icon(Icons.location_on_outlined, color: _selectedChannel != null ? AppColor.primary : Colors.grey.shade400, size: 22.sp),
                 SizedBox(width: 12.w),
                 Text(
-                  _selectedRegion ?? '지역을 선택해주세요',
+                  _selectedChannel ?? '채널을 선택해주세요',
                   style: TextStyle(
                     fontSize: 16.sp,
-                    color: _selectedRegion != null ? Colors.black87 : Colors.grey.shade400,
-                    fontWeight: _selectedRegion != null ? FontWeight.w600 : FontWeight.normal,
+                    color: _selectedChannel != null ? Colors.black87 : Colors.grey.shade400,
+                    fontWeight: _selectedChannel != null ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
                 const Spacer(),

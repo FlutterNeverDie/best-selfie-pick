@@ -84,7 +84,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                       context: context,
                       ref: ref,
                       title: '이벤트 및 혜택 알림', // 마케팅
-                      subtitle: '새로운 기능, 지역별 이벤트 등 유용한 소식을 놓치지 마세요.',
+                      subtitle: '새로운 기능, 채널별 이벤트 등 유용한 소식을 놓치지 마세요.',
                       settingKey: NotificationSettingsModel.keyMarketing,
                       currentValue: settings.marketing,
                       icon: Icons.campaign_rounded,

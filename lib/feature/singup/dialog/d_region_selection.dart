@@ -4,22 +4,25 @@ import 'package:go_router/go_router.dart';
 import 'package:selfie_pick/core/theme/colors/app_color.dart';
 import '../../../core/data/area.data.dart';
 
-class RegionSelectionDialog extends StatefulWidget {
-  final String? initialRegion;
+class ChannelSelectionDialog extends StatefulWidget {
 
-  const RegionSelectionDialog({super.key, this.initialRegion});
+  static const String routeName = 'channel_selection_dialog';
+  final String? initialChannel;
+
+  const ChannelSelectionDialog({super.key, this.initialChannel});
+
 
   @override
-  State<RegionSelectionDialog> createState() => _RegionSelectionDialogState();
+  State<ChannelSelectionDialog> createState() => _ChannelSelectionDialogState();
 }
 
-class _RegionSelectionDialogState extends State<RegionSelectionDialog> {
-  String? _selectedRegion;
+class _ChannelSelectionDialogState extends State<ChannelSelectionDialog> {
+  String? _selectedChannel;
 
   @override
   void initState() {
     super.initState();
-    _selectedRegion = widget.initialRegion;
+    _selectedChannel = widget.initialChannel;
   }
 
   @override
@@ -35,17 +38,17 @@ class _RegionSelectionDialogState extends State<RegionSelectionDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '거주 지역 선택',
+              '채널 선택',
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.h),
             Text(
-              '현재 거주하고 계신 지역을 선택해주세요.',
+              '채널을 선택해주세요.',
               style: TextStyle(fontSize: 13.sp, color: Colors.grey),
             ),
             SizedBox(height: 20.h),
 
-            // 지역 그리드
+            // 채널 그리드
             SizedBox(
               height: 300.h,
               child: GridView.builder(
@@ -58,12 +61,12 @@ class _RegionSelectionDialogState extends State<RegionSelectionDialog> {
                 itemCount: areasGlobalList.length,
                 itemBuilder: (context, index) {
                   final region = areasGlobalList[index];
-                  final isSelected = _selectedRegion == region;
+                  final isSelected = _selectedChannel == region;
 
                   return InkWell(
                     onTap: () {
                       setState(() {
-                        _selectedRegion = region;
+                        _selectedChannel = region;
                       });
                     },
                     borderRadius: BorderRadius.circular(8.w),
@@ -108,11 +111,11 @@ class _RegionSelectionDialogState extends State<RegionSelectionDialog> {
                 SizedBox(width: 12.w),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _selectedRegion == null
+                    onPressed: _selectedChannel == null
                         ? null
                         : () {
-                      // 💡 선택한 지역을 가지고 돌아감
-                      context.pop(_selectedRegion);
+                      // 💡 선택한 채널을 가지고 돌아감
+                      context.pop(_selectedChannel);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.primary,
