@@ -7,6 +7,7 @@ import 'package:selfie_pick/feature/singup/s_login.dart';
 import '../../feature/inquiry/s_inquiry.dart';
 import '../../feature/my_entry/s_entry_submission_screen.dart';
 import '../../feature/notification/s_notification_settings.dart';
+import '../../feature/report/s_blocked_users.dart';
 import '../../feature/singup/s_email.dart';
 import '../../feature/singup/s_profile_setup.dart';
 import '../../feature/singup/s_welcome.dart';
@@ -36,6 +37,11 @@ final List<GoRoute> appRoutes = [
         path: 'notifications',
         name: NotificationSettingsScreen.routeName, // '/notifications'
         builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: 'blocked_users',
+        name: BlockedUsersScreen.routeName, // '/notifications'
+        builder: (context, state) => const BlockedUsersScreen(),
       ),
       GoRoute(
         path: 'notice',

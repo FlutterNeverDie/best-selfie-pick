@@ -82,4 +82,27 @@ class ReportNotifier extends Notifier<void> {
       rethrow;
     }
   }
+
+  Future<void> unblockUser(String targetUserId) async {
+    final currentUser = ref.read(authProvider).user;
+    if (currentUser == null) return;
+
+    try {
+      // 1. DB 업데이트 (차단 해제)
+      await _repository.unblockUser(currentUser.uid, targetUserId);
+
+      // 2. 로컬 상태 즉시 갱신 (리스트에서 제거)
+      final authNotifier = ref.read(authProvider.notifier);
+
+      final updatedBlockedList = List<String>.from(currentUser.blockedUserIds)
+        ..remove(targetUserId);
+
+      final updatedUser = currentUser.copyWith(blockedUserIds: updatedBlockedList);
+
+      authNotifier.updateUserLocally(updatedUser);
+
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

@@ -13,6 +13,8 @@ class RiverpodObserver extends ProviderObserver {
     'EntryProvider',
     'voteProvider',
 
+    // 차단
+    'blockedUsersInfoProvider',
 
 
     // 인증

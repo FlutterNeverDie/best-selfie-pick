@@ -1,10 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:selfie_pick/core/data/collection.dart';
 import 'package:selfie_pick/model/m_user.dart';
-
-import '../../../../core/data/collection.dart';
 
 enum EmailCheckStatus {
   available, // 사용 가능
@@ -36,7 +35,7 @@ class AuthRepo {
     try {
       // 1. Firebase Auth 사용자 생성
       UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -100,7 +99,7 @@ class AuthRepo {
     }
   }
 
-// 🎯 신규 추가: 소셜 로그인 완료 후 필수 정보를 Firestore에 저장하는 함수
+  // 🎯 신규 추가: 소셜 로그인 완료 후 필수 정보를 Firestore에 저장하는 함수
   Future<UserModel> completeSocialSignUp({
     required String uid,
     required String email,
@@ -130,21 +129,23 @@ class AuthRepo {
     }
   }
 
-// --- 8. 소셜 로그인 함수 (Google) ---
+  // --- 8. 소셜 로그인 함수 (Google) ---
   Future<UserModel?> signInWithGoogle() async {
     try {
       // 🎯 수정 완료: authenticate() 메서드 사용 (v7+ 버전)
-      // authenticate()는 성공하면 GoogleSignInAccount를 반환, 실패하면 null (또는 예외)
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
 
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      if (googleUser == null) return null; // 사용자가 취소함
+
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.idToken,
         idToken: googleAuth.idToken,
       );
 
       final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
+      await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
 
       final loadedUser = await _fetchUserModel(user.uid);
@@ -154,50 +155,39 @@ class AuthRepo {
         // Firebase Auth 정보만 포함한 '프로필 불완전(NotSet)' 상태의 UserModel을 반환합니다.
         return UserModel.initial(
             uid: user.uid,
-            email: user.email ?? 'social_user_${user.uid}@gmail.com');
+            email: user.email ?? 'social_user_${user.uid}@gmail.com',
+            isSocialLogin: true);
       }
 
       return loadedUser;
     } on FirebaseAuthException catch (e) {
-      // Firebase Auth 관련 오류 처리
       throw Exception('Google 로그인 중 오류 발생: ${e.code}');
     } catch (e) {
-      // 기타 오류 (SDK 관련 등) 처리
       throw Exception('Google 로그인 중 알 수 없는 오류 발생: $e');
     }
   }
 
-// --- 9. 소셜 로그인 함수 (Apple) ---
+  // --- 9. 소셜 로그인 함수 (Apple) - 미구현 상태 유지 ---
   Future<UserModel?> signInWithApple() async {
-    // 구현 예정
+    // TODO: 애플 로그인 구현 필요
     return null;
   }
 
-// --- 10. 소셜 로그인 함수 (Kakao) ---
+  // --- 10. 소셜 로그인 함수 (Kakao) - 미구현 상태 유지 ---
   Future<UserModel?> signInWithKakao() async {
-    // 구현 예정
+    // TODO: 카카오 로그인 구현 필요
     return null;
   }
 
   /// 4. 로그아웃 로직 (Firebase Auth + 소셜 SDK 세션 종료)
   Future<void> signOut() async {
-    // 1. Google Sign-In 세션 종료 (만약 Google로 로그인했었다면)
     try {
-      // 🎯 _googleSignIn 필드를 사용하여 signOut() 메서드 호출
       await _googleSignIn.disconnect();
-    } catch (_) {
-      // Google Sign-in으로 로그인하지 않았을 경우 무시
-    }
+    } catch (_) {}
 
-    // 2. Kakao SDK 세션 종료 (만약 Kakao로 로그인했었다면)
-    try {
-      // 카카오 토큰이 있으면 로그아웃 시도
-      // await kakao.UserApi.instance.logout();
-    } catch (_) {
-      // 카카오 로그인이 아니거나 토큰이 없으면 무시
-    }
+    // 카카오 로그아웃 로직 (추후 구현 시 주석 해제)
+    // try { await kakao.UserApi.instance.logout(); } catch (_) {}
 
-    // 3. Firebase Authentication 세션 종료 (필수)
     await _auth.signOut();
   }
 
@@ -211,35 +201,26 @@ class AuthRepo {
     final doc = await _firestore.collection(MyCollection.USERS).doc(uid).get();
 
     if (!doc.exists) {
-      // Firestore 데이터가 없으면 Firebase Auth는 있지만 앱 데이터가 없는 경우
       return null;
     }
 
-    final UserModel result = UserModel.fromMap(doc.data()!);
-
-    return result;
+    return UserModel.fromMap(doc.data()!);
   }
 
   /// 11. 특정 이메일 주소로 등록된 인증 방법이 있는지 확인 (중복 확인)
-
-// AuthRepo 클래스 내부의 checkIfEmailExists 메서드 수정
   Future<EmailCheckStatus> checkIfEmailExists(String emailAddress) async {
     try {
-      // 1. Firestore에서 이메일 일치 문서 조회
       final QuerySnapshot result = await _firestore
           .collection(MyCollection.USERS)
           .where('email', isEqualTo: emailAddress)
           .limit(1)
           .get();
 
-      // 2. 문서가 없으면 사용 가능
       if (result.docs.isEmpty) {
         return EmailCheckStatus.available;
       }
 
-      // 3. 문서가 발견된 경우, isSocialLogin 필드 확인
       final userData = result.docs.first.data() as Map<String, dynamic>;
-      // Firestore에 해당 필드가 없으면 기본적으로 false로 간주
       final isSocial = userData['isSocialLogin'] ?? false;
 
       if (isSocial) {
@@ -248,7 +229,6 @@ class AuthRepo {
         return EmailCheckStatus.emailAlreadyInUse;
       }
     } catch (e) {
-      // 조회 중 오류 발생 (권한/네트워크 등)
       print('Firestore lookup error: $e');
       throw Exception('Failed to check email existence in Firestore: $e');
     }
@@ -261,21 +241,12 @@ class AuthRepo {
       throw Exception('현재 인증된 사용자가 유효하지 않습니다.');
     }
 
-    // 💡 트랜잭션을 사용하여 Firestore 데이터 삭제와 Auth 계정 삭제를 원자적으로 처리
-    // Note: Firestore 트랜잭션은 여러 문서에 걸쳐 쓰기 작업을 수행합니다.
     await _firestore.runTransaction((transaction) async {
       // 1. Firestore에서 UserModel 문서 삭제
       final userRef = _firestore.collection(MyCollection.USERS).doc(uid);
       transaction.delete(userRef);
 
-      // 2. 다른 사용자 데이터 삭제 (참가, 투표 기록 등)
-      // 🚨 주의: 트랜잭션 내에서 collection group 쿼리는 불가능하며,
-      // 모든 하위 컬렉션의 문서를 트랜잭션으로 삭제하는 것은 비효율적입니다.
-      // Firestore 문서 개별 삭제만 허용합니다. (CF 또는 관리자 앱 권장)
-
-      // MVP 범위에서 현재 사용자의 투표 기록 및 참가 기록만 삭제합니다.
-
-      // 2-1. contest_entries (본인의 참가 기록) 삭제
+      // 2. contest_entries (본인의 참가 기록) 삭제
       final entrySnapshot = await _firestore
           .collection(MyCollection.ENTRIES)
           .where('userId', isEqualTo: uid)
@@ -283,11 +254,9 @@ class AuthRepo {
 
       for (final doc in entrySnapshot.docs) {
         transaction.delete(doc.reference);
-        // 💡 관련 사진도 Storage에서 삭제해야 하지만, 트랜잭션 내에서 처리 불가하며,
-        // CF 트리거 또는 별도 함수 호출이 필요합니다. 여기서는 DB만 삭제합니다.
       }
 
-      // 2-2. votes (본인의 투표 기록) 삭제
+      // 3. votes (본인의 투표 기록) 삭제
       final votesSnapshot = await _firestore
           .collection(MyCollection.VOTES)
           .where('userId', isEqualTo: uid)
@@ -296,16 +265,12 @@ class AuthRepo {
       for (final doc in votesSnapshot.docs) {
         transaction.delete(doc.reference);
       }
-
-      // 3. Firestore 데이터 삭제 완료 후, Firebase Auth 계정 삭제 (비동기)
-      // 트랜잭션 내에서는 비동기 작업을 피해야 하지만, Auth 삭제는 DB 트랜잭션 바깥에서 처리하는 것이 일반적입니다.
-      // 여기서는 트랜잭션을 commit하고, 이후 Auth 삭제를 실행합니다.
     });
 
-    // 4. Firebase Auth 계정 삭제 (트랜잭션 바깥에서 최종 처리)
+    // 4. Firebase Auth 계정 삭제
     await user.delete();
 
-    // 5. 소셜 SDK 세션 정리 (로그아웃 로직 재사용)
+    // 5. 소셜 SDK 세션 정리
     await signOut();
   }
 
@@ -313,11 +278,43 @@ class AuthRepo {
     try {
       await _firestore.collection(MyCollection.USERS).doc(uid).update({
         'channel': newChannel,
-        'channelUpdatedAt':
-            FieldValue.serverTimestamp(), // 변경 시간 기록 (나중에 쿨타임 적용 등에 활용 가능)
+        'channelUpdatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       throw Exception('채널 정보를 업데이트하는 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  // =========================================================
+  // 👥 [신규 추가] 다수 유저 정보 조회 (차단 목록 표시용)
+  // =========================================================
+  Future<List<UserModel>> fetchUsersBasicInfo(List<String> userIds) async {
+    if (userIds.isEmpty) return [];
+
+    try {
+      final List<UserModel> users = [];
+
+      // Firestore 'whereIn' 쿼리는 최대 10개까지만 지원하므로 10개씩 끊어서 조회
+      for (var i = 0; i < userIds.length; i += 10) {
+        final end = (i + 10 < userIds.length) ? i + 10 : userIds.length;
+        final chunk = userIds.sublist(i, end);
+
+        final snapshot = await _firestore
+            .collection(MyCollection.USERS) // MyCollection 상수 사용
+            .where('uid', whereIn: chunk)
+            .get();
+
+        final chunkUsers = snapshot.docs
+            .map((doc) => UserModel.fromMap(doc.data()))
+            .toList();
+
+        users.addAll(chunkUsers);
+      }
+
+      return users;
+    } catch (e) {
+      print('Error fetching users info: $e');
+      return [];
     }
   }
 }

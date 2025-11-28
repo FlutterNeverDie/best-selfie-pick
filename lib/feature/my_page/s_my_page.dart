@@ -18,6 +18,7 @@ import '../../core/data/const.dart';
 import '../../shared/dialog/w_custom_confirm_dialog.dart';
 import '../auth/provider/auth_notifier.dart';
 import '../../model/m_user.dart';
+import '../report/s_blocked_users.dart';
 
 class MyPageScreen extends ConsumerWidget {
   const MyPageScreen({super.key});
@@ -130,6 +131,13 @@ class MyPageScreen extends ConsumerWidget {
                   icon: Icons.notifications_rounded,
                   iconColor: Colors.purple,
                   onTap: () => context.goNamed(NotificationSettingsScreen.routeName),
+                ),
+                _buildDivider(),
+                WMyPageMenuItem(
+                  title: '차단 관리',
+                  icon: Icons.block_rounded, // 방패 또는 차단 아이콘
+                  iconColor: Colors.redAccent,
+                  onTap: () => context.goNamed(BlockedUsersScreen.routeName),
                 ),
                 _buildDivider(),
                 WMyPageMenuItem(

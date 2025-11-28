@@ -35,4 +35,17 @@ class ReportRepository {
       throw Exception('차단 처리 중 오류가 발생했습니다.');
     }
   }
+
+  /// 3. [신규] 유저 차단 해제하기
+  Future<void> unblockUser(String currentUserId, String targetUserId) async {
+    try {
+      // 배열에서 제거 (arrayRemove)
+      await _firestore.collection(MyCollection.USERS).doc(currentUserId).update({
+        'blockedUserIds': FieldValue.arrayRemove([targetUserId]),
+      });
+    } catch (e) {
+      debugPrint('Unblock Error: $e');
+      throw Exception('차단 해제 처리 중 오류가 발생했습니다.');
+    }
+  }
 }
