@@ -1,23 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shimmer/shimmer.dart'; // 💡 Shimmer 패키지 import
+import 'package:shimmer/shimmer.dart';
+import 'package:selfie_pick/core/theme/colors/app_color.dart';
+import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
+import 'package:selfie_pick/feature/report/provider/report_provider.dart';
+import 'package:selfie_pick/shared/dialog/w_custom_confirm_dialog.dart';
 import 'package:text_gradiate/text_gradiate.dart';
 
-// 💡 타이머 위젯 Import
 import 'w_ranking_timer.dart';
-import '../provider/dialog/d_ranking_image_detail.dart'; // 다이얼로그 import
+import '../provider/dialog/d_ranking_image_detail.dart';
 
-class WRankingTopPodium extends StatelessWidget {
+class WRankingTopPodium extends ConsumerWidget {
   final List<EntryModel> topThree;
   final String channel;
 
   const WRankingTopPodium(
       {super.key, required this.topThree, required this.channel});
 
+  // 📋 ID 복사 메서드
+  void _copySnsId(BuildContext context, String snsId) {
+    Clipboard.setData(ClipboardData(text: '@$snsId')).then((_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('@$snsId 복사 완료!', style: TextStyle(fontSize: 14.sp)),
+            duration: const Duration(milliseconds: 1000),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (topThree.isEmpty) return const SizedBox();
 
     final first = topThree.isNotEmpty ? topThree[0] : null;
@@ -45,15 +65,15 @@ class WRankingTopPodium extends StatelessWidget {
           // 1. 🔥 실시간 핫 픽 타이틀
           Padding(
             padding:
-                EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 8.h),
+            EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 8.h),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextGradiate(
                   text: Text(
-                    '실시간 ${channel} 랭킹',
+                    '실시간 $channel 랭킹',
                     style:
-                        TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
+                    TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
                   ),
                   colors: [
                     Colors.pinkAccent.shade700,
@@ -73,7 +93,7 @@ class WRankingTopPodium extends StatelessWidget {
           // 2. ⏰ 타이머
           const WRankingTimer(),
 
-          SizedBox(height: 24.h), // 타이머와 포디움 사이 간격 확보
+          SizedBox(height: 24.h),
 
           // 3. 포디움 스택
           SizedBox(
@@ -85,20 +105,21 @@ class WRankingTopPodium extends StatelessWidget {
                   Positioned(
                     left: 16.w,
                     bottom: 0,
-                    child: _buildPodiumItem(context, second, 2),
+                    child: _buildPodiumItem(context, ref, second, 2),
                   ),
                 if (third != null)
                   Positioned(
                     right: 16.w,
                     bottom: 0,
-                    child: _buildPodiumItem(context, third, 3),
+                    child: _buildPodiumItem(context, ref, third, 3),
                   ),
                 if (first != null)
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 20.h,
-                    child: Center(child: _buildPodiumItem(context, first, 1)),
+                    child:
+                    Center(child: _buildPodiumItem(context, ref, first, 1)),
                   ),
               ],
             ),
@@ -108,26 +129,104 @@ class WRankingTopPodium extends StatelessWidget {
     );
   }
 
-  Widget _buildPodiumItem(BuildContext context, EntryModel entry, int rank) {
-    final isFirst = rank == 1;
+  // 🚨 신고/차단 다이얼로그
+  void _showReportDialog(
+      BuildContext context, WidgetRef ref, EntryModel entry) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const WCustomConfirmDialog(
+        title: '이 게시물을 신고하시겠습니까?',
+        content: '신고가 접수되면 해당 게시물은 즉시 차단되며,\n관리자 검토 후 처리됩니다.',
+        confirmText: '신고하기',
+        cancelText: '취소',
+        requiresAd: false,
+      ),
+    );
 
+    if (result == true) {
+      final currentUser = ref.read(authProvider).user;
+      if (currentUser == null) return;
+
+      try {
+        await ref.read(reportProvider.notifier).reportEntry(
+          reporterUid: currentUser.uid,
+          targetEntryId: entry.entryId,
+          targetUserUid: entry.userId,
+          reason: 'reported_in_podium',
+          description: 'User requested report from podium',
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('신고가 접수되어 차단되었습니다.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('신고 처리 중 오류가 발생했습니다.')),
+          );
+        }
+      }
+    }
+  }
+
+  void _showBlockDialog(
+      BuildContext context, WidgetRef ref, String targetUserId) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const WCustomConfirmDialog(
+        title: '이 사용자를 차단하시겠습니까?',
+        content: '차단하면 앞으로 이 사용자의 게시물이\n보이지 않게 됩니다.',
+        confirmText: '차단하기',
+        cancelText: '취소',
+        requiresAd: false,
+      ),
+    );
+
+    if (result == true) {
+      try {
+        await ref.read(reportProvider.notifier).blockUser(targetUserId);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('해당 사용자를 차단했습니다.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('차단 처리 중 오류가 발생했습니다.')),
+          );
+        }
+      }
+    }
+  }
+
+  Widget _buildPodiumItem(
+      BuildContext context, WidgetRef ref, EntryModel entry, int rank) {
+    final isFirst = rank == 1;
     final double cardWidth = isFirst ? 110.w : 90.w;
     final double cardHeight = isFirst ? 150.h : 120.h;
+
+    // 💡 본인 확인
+    final currentUser = ref.watch(authProvider).user;
+    final bool isMe = currentUser?.uid == entry.userId;
 
     Color rankColor;
     String rankLabel;
 
     switch (rank) {
       case 1:
-        rankColor = const Color(0xFFFFD700); // Gold
+        rankColor = const Color(0xFFFFD700);
         rankLabel = '1st';
         break;
       case 2:
-        rankColor = const Color(0xFFC0C0C0); // Silver
+        rankColor = const Color(0xFFC0C0C0);
         rankLabel = '2nd';
         break;
       case 3:
-        rankColor = const Color(0xFFCD7F32); // Bronze
+        rankColor = const Color(0xFFCD7F32);
         rankLabel = '3rd';
         break;
       default:
@@ -135,11 +234,10 @@ class WRankingTopPodium extends StatelessWidget {
         rankLabel = '';
     }
 
-    // 💡 Shimmer 효과를 위한 기본 텍스트 스타일 정의
     final baseTextStyle = TextStyle(
       fontSize: isFirst ? 14.sp : 12.sp,
       fontWeight: FontWeight.bold,
-      color: Colors.black87, // Shimmer의 baseColor로 사용
+      color: Colors.black87,
       overflow: TextOverflow.ellipsis,
     );
 
@@ -174,85 +272,218 @@ class WRankingTopPodium extends StatelessWidget {
             else
               SizedBox(height: 42.h),
 
-            Container(
-              width: cardWidth,
-              height: cardHeight,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(isFirst ? 16.w : 12.w),
-                border: Border.all(
-                    color: rankColor.withOpacity(0.8),
-                    width: isFirst ? 3.w : 2.w),
-                boxShadow: [
-                  BoxShadow(
-                    color: rankColor.withOpacity(isFirst ? 0.4 : 0.2),
-                    blurRadius: isFirst ? 15 : 10,
-                    offset: const Offset(0, 4),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // 1. 카드 본체
+                Container(
+                  width: cardWidth,
+                  height: cardHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(isFirst ? 16.w : 12.w),
+                    border: Border.all(
+                        color: rankColor.withOpacity(0.8),
+                        width: isFirst ? 3.w : 2.w),
+                    boxShadow: [
+                      BoxShadow(
+                        color: rankColor.withOpacity(isFirst ? 0.4 : 0.2),
+                        blurRadius: isFirst ? 15 : 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(isFirst ? 13.w : 10.w),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CachedNetworkImage(
-                      imageUrl: entry.thumbnailUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          Container(color: Colors.grey[100]),
-                      errorWidget: (context, url, error) =>
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(isFirst ? 13.w : 10.w),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CachedNetworkImage(
+                          imageUrl: entry.thumbnailUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              Container(color: Colors.grey[100]),
+                          errorWidget: (context, url, error) =>
                           const Icon(Icons.person),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        height: 50.h,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.8)
-                            ],
+                        ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Container(
+                            height: 50.h,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.8)
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: 8.h),
+                            child: Text(
+                              rankLabel,
+                              style: TextStyle(
+                                  color: rankColor,
+                                  fontSize: isFirst ? 24.sp : 18.sp,
+                                  fontWeight: FontWeight.w900,
+                                  fontStyle: FontStyle.italic,
+                                  shadows: [
+                                    Shadow(
+                                        color: Colors.black, blurRadius: 4.w),
+                                  ]),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: 8.h),
-                        child: Text(
-                          rankLabel,
-                          style: TextStyle(
-                              color: rankColor,
-                              fontSize: isFirst ? 24.sp : 18.sp,
-                              fontWeight: FontWeight.w900,
-                              fontStyle: FontStyle.italic,
-                              shadows: [
-                                Shadow(color: Colors.black, blurRadius: 4.w),
-                              ]),
+                  ),
+                ),
+
+                // 2. 🙋‍♂️ [Me Badge] 본인일 경우 우측 상단 표시
+                if (isMe)
+                  Positioned(
+                    top: 6.h,
+                    right: 6.w,
+                    child: GestureDetector(
+                      onTap: () => _copySnsId(context, entry.snsId),
+                      child: Container(
+                        padding:
+                        EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                        decoration: BoxDecoration(
+                          color: AppColor.primary.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(10.w),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 2.w)
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.face_rounded,
+                                color: Colors.white, size: 10.w),
+                            SizedBox(width: 3.w),
+                            Text(
+                              "나",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+
+                // 3. 더보기 버튼 (복사/신고/차단) - 타인일 경우 우측 상단
+                if (!isMe)
+                  Positioned(
+                    top: 2.h,
+                    right: 2.w,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        popupMenuTheme: PopupMenuThemeData(
+                          color: Colors.white,
+                          surfaceTintColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.w)),
+                          elevation: 4,
+                        ),
+                      ),
+                      child: PopupMenuButton<String>(
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(minWidth: 120.w),
+                        icon: Container(
+                          padding: EdgeInsets.all(4.w),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.more_vert_rounded,
+                              color: Colors.white, size: 16.w),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'copy') {
+                            _copySnsId(context, entry.snsId);
+                          } else if (value == 'report') {
+                            _showReportDialog(context, ref, entry);
+                          } else if (value == 'block') {
+                            _showBlockDialog(context, ref, entry.userId);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'copy',
+                            height: 40.h,
+                            child: Row(
+                              children: [
+                                Icon(Icons.copy_rounded,
+                                    color: Colors.grey.shade700, size: 18.w),
+                                SizedBox(width: 8.w),
+                                Text('ID 복사',
+                                    style: TextStyle(
+                                        fontSize: 13.sp,
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'report',
+                            height: 40.h,
+                            child: Row(
+                              children: [
+                                Icon(Icons.report_gmailerrorred_rounded,
+                                    color: Colors.redAccent, size: 18.w),
+                                SizedBox(width: 8.w),
+                                Text('신고하기',
+                                    style: TextStyle(
+                                        fontSize: 13.sp,
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'block',
+                            height: 40.h,
+                            child: Row(
+                              children: [
+                                Icon(Icons.block_rounded,
+                                    color: Colors.grey.shade700, size: 18.w),
+                                SizedBox(width: 8.w),
+                                Text('차단하기',
+                                    style: TextStyle(
+                                        fontSize: 13.sp,
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
 
             SizedBox(height: 8.h),
 
-            // 💡 [수정] TextGradiate 대신 Shimmer 적용
+            // Shimmer 닉네임
             Shimmer.fromColors(
-              // Shimmer의 highlightColor를 랭킹 색상으로 사용하여 금속성 광택 느낌
               baseColor: Colors.black87,
               highlightColor: rankColor,
               period: const Duration(seconds: 2),
               child: Text(
                 '@${entry.snsId}',
-                style: baseTextStyle, // 위에서 정의한 스타일 사용
+                style: baseTextStyle,
               ),
             ),
           ],
