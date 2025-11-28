@@ -60,7 +60,7 @@ class WRankingListView extends ConsumerWidget {
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12.h),
               child: const Center(
-                child: WBannerAd(adSize: AdSize.banner),
+                child: WBannerAd(adSize: AdSize.largeBanner),
               ),
             ),
 
