@@ -69,6 +69,10 @@ class UserModel {
   /// 브론즈 뱃지 획득 횟수 (3위)
   final int badgeBronze;
 
+  // 💡 [신규] 차단한 유저 ID 목록 (필터링용)
+  final List<String> blockedUserIds;
+
+
   /// 기본 생성자
   ///
   /// 모든 필드를 초기화합니다. 불변 객체로 생성됩니다.
@@ -88,6 +92,7 @@ class UserModel {
     this.badgeGold = 0,
     this.badgeSilver = 0,
     this.badgeBronze = 0,
+    this.blockedUserIds = const [],
   });
 
   /// 회원가입 직후 초기 사용자 객체를 생성하는 팩토리 생성자
@@ -121,6 +126,7 @@ class UserModel {
       badgeGold: 0,
       badgeSilver: 0,
       badgeBronze: 0,
+      blockedUserIds: const [],
     );
   }
 
@@ -155,12 +161,15 @@ class UserModel {
       isSocialLogin: map['isSocialLogin'] ?? false,
       isAdmin: map['isAdmin'] ?? false,
       lastEntryWeekKey: map['lastEntryWeekKey'] as String?,
-      // 💡 신규 필드 매핑 (기존 데이터가 없을 경우 0 처리)
       honorScore: (map['honorScore'] as num?)?.toInt() ?? 0,
       points: (map['points'] as num?)?.toInt() ?? 0,
       badgeGold: (map['badgeGold'] as num?)?.toInt() ?? 0,
       badgeSilver: (map['badgeSilver'] as num?)?.toInt() ?? 0,
       badgeBronze: (map['badgeBronze'] as num?)?.toInt() ?? 0,
+      blockedUserIds: (map['blockedUserIds'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList() ??
+          const [],
     );
   }
 
@@ -176,12 +185,13 @@ class UserModel {
       'isSocialLogin': isSocialLogin,
       'isAdmin': isAdmin,
       'lastEntryWeekKey': lastEntryWeekKey,
-      // 💡 신규 필드 저장
       'honorScore': honorScore,
       'points': points,
       'badgeGold': badgeGold,
       'badgeSilver': badgeSilver,
       'badgeBronze': badgeBronze,
+      'blockedUserIds': blockedUserIds,
+
     };
   }
 
@@ -200,6 +210,8 @@ class UserModel {
     int? badgeGold,
     int? badgeSilver,
     int? badgeBronze,
+    List<String>? blockedUserIds,
+
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -216,6 +228,8 @@ class UserModel {
       badgeGold: badgeGold ?? this.badgeGold,
       badgeSilver: badgeSilver ?? this.badgeSilver,
       badgeBronze: badgeBronze ?? this.badgeBronze,
+      blockedUserIds: blockedUserIds ?? this.blockedUserIds,
+
     );
   }
 

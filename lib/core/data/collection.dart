@@ -6,5 +6,6 @@ class MyCollection {
   static String INQUIRIES = 'inquiries';
   static String USERS = 'users';
   static String CHAMPION = 'champions';
+  static String REPORT = 'reports';
 
 }

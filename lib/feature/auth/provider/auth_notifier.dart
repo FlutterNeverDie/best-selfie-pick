@@ -332,5 +332,9 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  void updateUserLocally(UserModel updatedUser) {
+    state = state.copyWith(user: updatedUser);
+  }
+
 
 }

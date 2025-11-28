@@ -18,9 +18,7 @@ final entryRepoProvider = Provider((ref) => EntryRepository(
     ));
 
 class EntryRepository {
-  static int CANDIDATE_BATCH_SIZE = 10;
 
-  // 💡 final 필드로 선언하고 생성자로부터 주입받습니다.
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
 
@@ -205,23 +203,32 @@ class EntryRepository {
     }
   }
 
+  /// 투표용 후보 리스트 조회 (Paging 지원)
+  /// - [channel]: 조회할 채널 (예: "Seoul")
+  /// - [weekKey]: 회차 키 (예: "2025-12")
+  /// - [startAfterDoc]: 무한 스크롤 커서
+  /// - [limit]: 한 번에 불러올 개수 (기본값 10)
   Future<QuerySnapshot<Map<String, dynamic>>> fetchCandidatesForVoting(
-      String regionCity, String weekKey,
-      {DocumentSnapshot? startAfterDoc}) async {
-    // ... (로직 유지)
-    Query query = _firestore
+      String channel,
+      String weekKey, {
+        DocumentSnapshot? startAfterDoc,
+        int limit = 10, // 💡 [추가] limit 매개변수를 받아 유동적으로 처리
+      }) async {
+    // 쿼리 구성
+    Query<Map<String, dynamic>> query = _firestore
         .collection(MyCollection.ENTRIES)
-        .where('channel', isEqualTo: regionCity)
+        .where('channel', isEqualTo: channel) // 💡 regionCity -> channel
         .where('weekKey', isEqualTo: weekKey)
-        .where('status', isEqualTo: 'approved')
-        .orderBy('totalScore', descending: true);
+        .where('status', isEqualTo: 'approved') // 승인된 후보만 노출
+        .orderBy('totalScore', descending: true); // 점수 높은 순 정렬
 
+    // 페이징 커서 적용
     if (startAfterDoc != null) {
       query = query.startAfterDocument(startAfterDoc);
     }
 
-    return await query.limit(CANDIDATE_BATCH_SIZE).get()
-        as QuerySnapshot<Map<String, dynamic>>;
+    // 💡 전달받은 limit 적용 (고정 상수 대신 매개변수 사용)
+    return await query.limit(limit).get();
   }
 
   /// 7. 💡 [신규] 투표 상태 변경 (비공개/공개 전환)
