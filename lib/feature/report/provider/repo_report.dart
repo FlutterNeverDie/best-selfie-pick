@@ -24,27 +24,56 @@ class ReportRepository {
   }
 
   /// 2. 유저 차단하기
-  Future<void> blockUser(String currentUserId, String targetUserId) async {
+  Future<void> blockUser({
+    required String currentUserId,
+    required String targetUserId,
+    required String snsId,    // 💡 추가됨
+    required String channel,  // 💡 추가됨
+    required String weekKey,  // 💡 추가됨
+  }) async {
     try {
-      // 내 유저 문서의 blockedUserIds 배열에 대상 ID 추가
-      await _firestore.collection(MyCollection.USERS).doc(currentUserId).update({
+      final batch = _firestore.batch();
+
+      // A. 필터링용 배열에 ID 추가 (기존 로직)
+      final userRef = _firestore.collection(MyCollection.USERS).doc(currentUserId);
+      batch.update(userRef, {
         'blockedUserIds': FieldValue.arrayUnion([targetUserId]),
       });
+
+      // B. 💡 [신규] 차단 내역 서브 컬렉션에 상세 정보 저장 (Snapshot)
+      final historyRef = userRef.collection('blocked_history').doc(targetUserId);
+      batch.set(historyRef, {
+        'uid': targetUserId,
+        'snsId': snsId,
+        'channel': channel,
+        'weekKey': weekKey,
+        'blockedAt': FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
     } catch (e) {
-      debugPrint('Block Error: $e');
+      debugPrint('Error blockUser(차단 - Repo) user: ${e.toString()}');
       throw Exception('차단 처리 중 오류가 발생했습니다.');
     }
   }
 
-  /// 3. [신규] 유저 차단 해제하기
+  /// 3. 차단 해제하기
   Future<void> unblockUser(String currentUserId, String targetUserId) async {
     try {
-      // 배열에서 제거 (arrayRemove)
-      await _firestore.collection(MyCollection.USERS).doc(currentUserId).update({
+      final batch = _firestore.batch();
+
+      // A. 배열에서 제거
+      final userRef = _firestore.collection(MyCollection.USERS).doc(currentUserId);
+      batch.update(userRef, {
         'blockedUserIds': FieldValue.arrayRemove([targetUserId]),
       });
+
+      // B. 💡 서브 컬렉션 문서 삭제
+      final historyRef = userRef.collection('blocked_history').doc(targetUserId);
+      batch.delete(historyRef);
+
+      await batch.commit();
     } catch (e) {
-      debugPrint('Unblock Error: $e');
       throw Exception('차단 해제 처리 중 오류가 발생했습니다.');
     }
   }

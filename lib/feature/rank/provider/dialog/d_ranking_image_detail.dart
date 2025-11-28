@@ -8,6 +8,9 @@ import '../../../../shared/admob/w_banner_ad.dart';
 import '../../../../shared/service/uri_service.dart'; // 경로 확인 필요
 
 class RankingImageDetailDialog extends StatelessWidget {
+
+  static const String routeName = '/rankingImageDialog';
+
   final EntryModel entry;
 
   const RankingImageDetailDialog({super.key, required this.entry});

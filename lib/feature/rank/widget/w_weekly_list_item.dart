@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:selfie_pick/core/theme/colors/app_color.dart'; // AppColor 추가
 import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/feature/report/provider/report_provider.dart';
-import 'package:selfie_pick/shared/dialog/d_report.dart';
 import 'package:selfie_pick/shared/dialog/w_custom_confirm_dialog.dart';
 import '../provider/dialog/d_ranking_image_detail.dart';
 
@@ -43,8 +43,8 @@ class WRankingListItem extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-            Text('@${entry.snsId} 복사 완료!', style: TextStyle(fontSize: 14.sp)),
+            content: Text('@${entry.snsId} 복사 완료!',
+                style: TextStyle(fontSize: 14.sp)),
             duration: const Duration(milliseconds: 1000),
             behavior: SnackBarBehavior.floating,
           ),
@@ -58,6 +58,7 @@ class WRankingListItem extends ConsumerWidget {
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.8),
+      routeSettings: const RouteSettings(name: RankingImageDetailDialog.routeName),
       builder: (context) => RankingImageDetailDialog(entry: entry),
     );
   }
@@ -86,6 +87,9 @@ class WRankingListItem extends ConsumerWidget {
           targetUserUid: entry.userId,
           reason: 'reported_in_ranking',
           description: 'User requested report from ranking list',
+          snsId: entry.snsId,
+          channel: entry.channel,
+          weekKey: entry.weekKey,
         );
 
         if (context.mounted) {
@@ -118,7 +122,12 @@ class WRankingListItem extends ConsumerWidget {
 
     if (result == true) {
       try {
-        await ref.read(reportProvider.notifier).blockUser(entry.userId);
+        await ref.read(reportProvider.notifier).blockUser(
+          targetUserId: entry.userId,
+          snsId: entry.snsId,
+          channel: entry.channel,
+          weekKey: entry.weekKey,
+        );
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -247,18 +256,37 @@ class WRankingListItem extends ConsumerWidget {
                   ),
                 ),
 
-                // 4. 우측 액션 버튼 (본인: 복사, 타인: 더보기 메뉴)
+                // 4. 우측 액션 버튼 (본인: Me뱃지 / 타인: 더보기 메뉴)
                 if (isMe)
-                // 본인일 경우: 기존 ID 복사 아이콘 유지
+                // 💡 [수정] 본인일 경우 'Me' 뱃지 표시
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () => _copySnsId(context),
                       borderRadius: BorderRadius.circular(20.w),
-                      child: Padding(
-                        padding: EdgeInsets.all(8.w),
-                        child: Icon(Icons.content_copy_rounded,
-                            color: Colors.grey.shade300, size: 20.w),
+                      child: Container(
+                        margin: EdgeInsets.all(8.w),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 10.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: AppColor.primary.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12.w),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          "Me",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   )

@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
-import 'package:selfie_pick/feature/rank/widget/w_ranking_list_item.dart';
+import 'package:selfie_pick/feature/rank/widget/w_weekly_list_item.dart';
 import 'package:text_gradiate/text_gradiate.dart';
 
 import '../../../shared/admob/w_banner_ad.dart';

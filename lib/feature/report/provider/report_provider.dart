@@ -30,6 +30,10 @@ class ReportNotifier extends Notifier<void> {
     required String targetUserUid,
     required String reason,
     String description = '',
+    // 💡 차단에 필요한 추가 정보 (스냅샷용)
+    required String snsId,
+    required String channel,
+    required String weekKey,
   }) async {
     try {
       // 1. 신고 접수 (DB)
@@ -45,8 +49,12 @@ class ReportNotifier extends Notifier<void> {
       await _repository.submitReport(report);
 
       // 2. 🎯 신고 대상 자동 차단 실행
-      // "신고하면 자동으로 차단
-      await blockUser(targetUserUid);
+      await blockUser(
+        targetUserId: targetUserUid,
+        snsId: snsId,
+        channel: channel,
+        weekKey: weekKey,
+      );
 
     } catch (e) {
       rethrow;
@@ -54,18 +62,26 @@ class ReportNotifier extends Notifier<void> {
   }
 
   /// 차단하기 로직 (핵심: 로컬 상태 즉시 갱신)
-  Future<void> blockUser(String targetUserId) async {
+  Future<void> blockUser({
+    required String targetUserId,
+    required String snsId,    // 💡 추가
+    required String channel,  // 💡 추가
+    required String weekKey,  // 💡 추가
+  }) async {
     final currentUser = ref.read(authProvider).user;
     if (currentUser == null) return;
 
-    // 이미 차단된 유저라면 로직 스킵 (중복 방지)
-    if (currentUser.blockedUserIds.contains(targetUserId)) {
-      return;
-    }
+    if (currentUser.blockedUserIds.contains(targetUserId)) return;
 
     try {
-      // 1. DB 업데이트 (차단 목록 추가)
-      await _repository.blockUser(currentUser.uid, targetUserId);
+      // 1. DB 업데이트 (상세 정보 전달)
+      await _repository.blockUser(
+        currentUserId: currentUser.uid,
+        targetUserId: targetUserId,
+        snsId: snsId,
+        channel: channel,
+        weekKey: weekKey,
+      );
 
       // 2. 💡 로컬 AuthState의 blockedUserIds 즉시 갱신
       final authNotifier = ref.read(authProvider.notifier);
@@ -79,6 +95,7 @@ class ReportNotifier extends Notifier<void> {
       authNotifier.updateUserLocally(updatedUser);
 
     } catch (e) {
+      debugPrint('Error blockUser(차단 - Notifier) user: ${e.toString()}');
       rethrow;
     }
   }

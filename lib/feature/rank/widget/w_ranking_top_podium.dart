@@ -8,7 +8,8 @@ import 'package:selfie_pick/core/theme/colors/app_color.dart';
 import 'package:selfie_pick/feature/auth/provider/auth_notifier.dart';
 import 'package:selfie_pick/feature/my_entry/model/m_entry.dart';
 import 'package:selfie_pick/feature/report/provider/report_provider.dart';
-import 'package:selfie_pick/shared/dialog/w_custom_confirm_dialog.dart';
+import 'package:selfie_pick/shared/dialog/d_report.dart'; // 💡 신고 다이얼로그
+import 'package:selfie_pick/shared/dialog/w_custom_confirm_dialog.dart'; // 💡 차단 다이얼로그
 import 'package:text_gradiate/text_gradiate.dart';
 
 import 'w_ranking_timer.dart';
@@ -34,6 +35,83 @@ class WRankingTopPodium extends ConsumerWidget {
         );
       }
     });
+  }
+
+  // 🚨 신고 다이얼로그
+  void _showReportDialog(BuildContext context, WidgetRef ref, EntryModel entry) {
+    showDialog(
+      context: context,
+      routeSettings: const RouteSettings(name: 'ReportDialog'),
+      builder: (context) => ReportDialog(
+        onReport: (reason, desc) async {
+          final currentUser = ref.read(authProvider).user;
+          if (currentUser == null) return;
+
+          try {
+            await ref.read(reportProvider.notifier).reportEntry(
+              reporterUid: currentUser.uid,
+              targetEntryId: entry.entryId,
+              targetUserUid: entry.userId,
+              reason: reason,
+              description: desc,
+              snsId: entry.snsId,
+              channel: entry.channel,
+              weekKey: entry.weekKey,
+            );
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('신고가 접수되어 차단되었습니다.')),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('신고 처리 중 오류가 발생했습니다.')),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  // 🚫 차단 다이얼로그
+  void _showBlockDialog(BuildContext context, WidgetRef ref, EntryModel entry) async {
+    final result = await showDialog<bool>(
+      context: context,
+      routeSettings: const RouteSettings(name: 'BlockConfirmDialog'),
+      builder: (context) => const WCustomConfirmDialog(
+        title: '이 사용자를 차단하시겠습니까?',
+        content: '차단하면 앞으로 이 사용자의 게시물이\n보이지 않게 됩니다.',
+        confirmText: '차단하기',
+        cancelText: '취소',
+        requiresAd: false,
+      ),
+    );
+
+    if (result == true) {
+      try {
+        await ref.read(reportProvider.notifier).blockUser(
+          targetUserId: entry.userId,
+          snsId: entry.snsId,
+          channel: entry.channel,
+          weekKey: entry.weekKey,
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('해당 사용자를 차단했습니다.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('차단 처리 중 오류가 발생했습니다.')),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -62,18 +140,15 @@ class WRankingTopPodium extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // 1. 🔥 실시간 핫 픽 타이틀
           Padding(
-            padding:
-            EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 8.h),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextGradiate(
                   text: Text(
                     '실시간 $channel 랭킹',
-                    style:
-                    TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
+                    style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
                   ),
                   colors: [
                     Colors.pinkAccent.shade700,
@@ -89,13 +164,8 @@ class WRankingTopPodium extends ConsumerWidget {
               ],
             ),
           ),
-
-          // 2. ⏰ 타이머
           const WRankingTimer(),
-
           SizedBox(height: 24.h),
-
-          // 3. 포디움 스택
           SizedBox(
             height: 260.h,
             child: Stack(
@@ -118,8 +188,7 @@ class WRankingTopPodium extends ConsumerWidget {
                     left: 0,
                     right: 0,
                     bottom: 20.h,
-                    child:
-                    Center(child: _buildPodiumItem(context, ref, first, 1)),
+                    child: Center(child: _buildPodiumItem(context, ref, first, 1)),
                   ),
               ],
             ),
@@ -129,87 +198,11 @@ class WRankingTopPodium extends ConsumerWidget {
     );
   }
 
-  // 🚨 신고/차단 다이얼로그
-  void _showReportDialog(
-      BuildContext context, WidgetRef ref, EntryModel entry) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => const WCustomConfirmDialog(
-        title: '이 게시물을 신고하시겠습니까?',
-        content: '신고가 접수되면 해당 게시물은 즉시 차단되며,\n관리자 검토 후 처리됩니다.',
-        confirmText: '신고하기',
-        cancelText: '취소',
-        requiresAd: false,
-      ),
-    );
-
-    if (result == true) {
-      final currentUser = ref.read(authProvider).user;
-      if (currentUser == null) return;
-
-      try {
-        await ref.read(reportProvider.notifier).reportEntry(
-          reporterUid: currentUser.uid,
-          targetEntryId: entry.entryId,
-          targetUserUid: entry.userId,
-          reason: 'reported_in_podium',
-          description: 'User requested report from podium',
-        );
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('신고가 접수되어 차단되었습니다.')),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('신고 처리 중 오류가 발생했습니다.')),
-          );
-        }
-      }
-    }
-  }
-
-  void _showBlockDialog(
-      BuildContext context, WidgetRef ref, String targetUserId) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => const WCustomConfirmDialog(
-        title: '이 사용자를 차단하시겠습니까?',
-        content: '차단하면 앞으로 이 사용자의 게시물이\n보이지 않게 됩니다.',
-        confirmText: '차단하기',
-        cancelText: '취소',
-        requiresAd: false,
-      ),
-    );
-
-    if (result == true) {
-      try {
-        await ref.read(reportProvider.notifier).blockUser(targetUserId);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('해당 사용자를 차단했습니다.')),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('차단 처리 중 오류가 발생했습니다.')),
-          );
-        }
-      }
-    }
-  }
-
-  Widget _buildPodiumItem(
-      BuildContext context, WidgetRef ref, EntryModel entry, int rank) {
+  Widget _buildPodiumItem(BuildContext context, WidgetRef ref, EntryModel entry, int rank) {
     final isFirst = rank == 1;
     final double cardWidth = isFirst ? 110.w : 90.w;
     final double cardHeight = isFirst ? 150.h : 120.h;
 
-    // 💡 본인 확인
     final currentUser = ref.watch(authProvider).user;
     final bool isMe = currentUser?.uid == entry.userId;
 
@@ -244,6 +237,7 @@ class WRankingTopPodium extends ConsumerWidget {
     return GestureDetector(
       onTap: () {
         showDialog(
+          routeSettings: const RouteSettings(name: RankingImageDetailDialog.routeName),
           context: context,
           barrierColor: Colors.black.withOpacity(0.8),
           builder: (context) => RankingImageDetailDialog(entry: entry),
@@ -275,7 +269,6 @@ class WRankingTopPodium extends ConsumerWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                // 1. 카드 본체
                 Container(
                   width: cardWidth,
                   height: cardHeight,
@@ -345,36 +338,30 @@ class WRankingTopPodium extends ConsumerWidget {
                   ),
                 ),
 
-                // 2. 🙋‍♂️ [Me Badge] 본인일 경우 우측 상단 표시
                 if (isMe)
                   Positioned(
                     top: 6.h,
                     right: 6.w,
-                    child: GestureDetector(
-                      onTap: () => _copySnsId(context, entry.snsId),
-                      child: Container(
-                        padding:
-                        EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-                        decoration: BoxDecoration(
-                          color: AppColor.primary.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(10.w),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black26, blurRadius: 2.w)
-                          ],
-                        ),
-                        child: Text(
-                          "Me",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                      decoration: BoxDecoration(
+                        color: AppColor.primary.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(10.w),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black26, blurRadius: 2.w)
+                        ],
+                      ),
+                      child: Text(
+                        "Me",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
 
-                // 3. 더보기 버튼 (복사/신고/차단) - 타인일 경우 우측 상단
                 if (!isMe)
                   Positioned(
                     top: 2.h,
@@ -390,6 +377,7 @@ class WRankingTopPodium extends ConsumerWidget {
                         ),
                       ),
                       child: PopupMenuButton<String>(
+                        routeSettings: const RouteSettings(name: 'EntryOptionsMenu'),
                         padding: EdgeInsets.zero,
                         constraints: BoxConstraints(minWidth: 120.w),
                         icon: Container(
@@ -407,7 +395,7 @@ class WRankingTopPodium extends ConsumerWidget {
                           } else if (value == 'report') {
                             _showReportDialog(context, ref, entry);
                           } else if (value == 'block') {
-                            _showBlockDialog(context, ref, entry.userId);
+                            _showBlockDialog(context, ref, entry);
                           }
                         },
                         itemBuilder: (context) => [
@@ -465,10 +453,7 @@ class WRankingTopPodium extends ConsumerWidget {
                   ),
               ],
             ),
-
             SizedBox(height: 8.h),
-
-            // Shimmer 닉네임
             Shimmer.fromColors(
               baseColor: Colors.black87,
               highlightColor: rankColor,

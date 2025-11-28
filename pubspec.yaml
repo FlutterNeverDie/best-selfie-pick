@@ -70,6 +70,9 @@ dependencies:
   shimmer: ^3.0.0
   text_gradiate: ^1.0.1
 
+  #date
+  intl: ^0.20.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
