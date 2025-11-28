@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart'; // 💡 Functions 추가
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart'; // 💡 PlatformException을 위해 별칭 없이 import
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'
-    as kakao; // 💡 카카오 SDK import
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao; // 💡 카카오 SDK
 import 'package:selfie_pick/core/data/collection.dart';
 import 'package:selfie_pick/model/m_user.dart';
 
@@ -22,8 +23,10 @@ class AuthRepo {
   final Ref ref;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // 💡 Functions 인스턴스 (커스텀 토큰 발행용)
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
-  // 💡 scopes를 지정하여 GoogleSignIn 인스턴스 생성 (필요시 email, profile 등 추가)
+  // 💡 [유지] GoogleSignIn은 싱글톤 instance를 사용합니다.
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   AuthRepo({required this.ref});
@@ -36,8 +39,7 @@ class AuthRepo {
     required String gender,
   }) async {
     try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -126,57 +128,52 @@ class AuthRepo {
   // --- 8. 소셜 로그인 함수 (Google) ---
   Future<UserModel?> signInWithGoogle() async {
     try {
-// 🎯 수정 완료: authenticate() 메서드 사용 (v7+ 버전)
-
+      // 🎯 [유지] v7.x: authenticate() 사용
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.idToken,
+        accessToken: null,
         idToken: googleAuth.idToken,
       );
 
       final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-
+      await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
 
       final loadedUser = await _fetchUserModel(user.uid);
 
       if (loadedUser == null) {
-// 🎯 핵심 변경: Firestore에 데이터가 없는 경우,
-
-// Firebase Auth 정보만 포함한 '프로필 불완전(NotSet)' 상태의 UserModel을 반환합니다.
-
         return UserModel.initial(
             uid: user.uid,
-            email: user.email ?? 'social_user_${user.uid}@gmail.com');
+            email: user.email ?? 'social_user_${user.uid}@gmail.com',
+            isSocialLogin: true);
       }
 
       return loadedUser;
+    } on GoogleSignInException catch (e) {
+      print('Google Sign-in exception: ${e.code}');
+      return null;
     } on FirebaseAuthException catch (e) {
-// Firebase Auth 관련 오류 처리
-
       throw Exception('Google 로그인 중 오류 발생: ${e.code}');
     } catch (e) {
-// 기타 오류 (SDK 관련 등) 처리
-
       throw Exception('Google 로그인 중 알 수 없는 오류 발생: $e');
     }
   }
 
-  // --- 10. 소셜 로그인 함수 (Kakao) - OIDC 방식 ---
-  Future<UserModel?> signInWithKakao() async { 
-  /*  try {
+  // --- 10. 소셜 로그인 함수 (Kakao) - 🔥 Custom Token 방식 (무료) ---
+  Future<UserModel?> signInWithKakao() async {
+    try {
       // 1. 카카오 로그인 시도 (카카오톡 앱 or 계정)
       kakao.OAuthToken token;
+
       if (await kakao.isKakaoTalkInstalled()) {
         try {
           token = await kakao.UserApi.instance.loginWithKakaoTalk();
         } catch (error) {
           // 사용자가 취소했거나 에러 발생 시 계정 로그인 시도
-          if (error is kakao.PlatformException && error.code == 'CANCELED') {
+          if (error is PlatformException && error.code == 'CANCELED') {
             return null;
           }
           token = await kakao.UserApi.instance.loginWithKakaoAccount();
@@ -185,37 +182,42 @@ class AuthRepo {
         token = await kakao.UserApi.instance.loginWithKakaoAccount();
       }
 
-      // 2. Firebase OIDC 로그인
-      // 💡 주의: Firebase Console에서 'oidc.kakao' 제공업체가 설정되어 있어야 합니다.
-      final provider = OAuthProvider('oidc.kakao');
-      final credential = provider.credential(
-        idToken: token.idToken,
-        accessToken: token.accessToken,
-      );
+      // 2. Cloud Functions 호출하여 Firebase Custom Token 교환
+      // (OIDC 설정을 안 해도 되므로 비용 문제 해결!)
+      final HttpsCallable callable = _functions.httpsCallable('kakaoCustomAuth');
+      final result = await callable.call(<String, dynamic>{
+        'token': token.accessToken, // 카카오 액세스 토큰 전달
+      });
 
+      final String firebaseCustomToken = result.data['firebaseToken'];
+
+      // 3. 커스텀 토큰으로 Firebase 로그인
       final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
+      await _auth.signInWithCustomToken(firebaseCustomToken);
       final user = userCredential.user!;
 
-      // 3. Firestore 조회
+      // 4. Firestore 조회
       final loadedUser = await _fetchUserModel(user.uid);
 
       if (loadedUser == null) {
         // 🎯 신규 유저: 초기화된 모델 반환 (회원가입 유도)
         return UserModel.initial(
             uid: user.uid,
-            email: user.email ?? 'kakao_${user.uid}@no.email', // 이메일 없을 경우 대비
+            // 카카오 이메일이 없을 수 있으므로 대비
+            email: user.email ?? 'kakao_${user.uid.replaceAll(":", "")}@no.email',
             isSocialLogin: true);
       }
 
       return loadedUser;
+
     } catch (e) {
       // 카카오 로그인 실패 처리
-      if (e is kakao.PlatformException && e.code == 'CANCELED') {
+      if (e is PlatformException && e.code == 'CANCELED') {
         return null;
       }
+      print('Kakao Login Error: $e');
       throw Exception('Kakao 로그인 실패: $e');
-    }*/
+    }
   }
 
   // --- 9. 소셜 로그인 함수 (Apple) - 미구현 ---
@@ -343,8 +345,9 @@ class AuthRepo {
             .where('uid', whereIn: chunk)
             .get();
 
-        final chunkUsers =
-            snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList();
+        final chunkUsers = snapshot.docs
+            .map((doc) => UserModel.fromMap(doc.data()))
+            .toList();
 
         users.addAll(chunkUsers);
       }
