@@ -113,11 +113,7 @@ class _ChannelChangeDialogState extends ConsumerState<ChannelChangeDialog> {
               '활동 채널 변경',
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8.h),
-            Text(
-              '변경 시 5초 내외의 광고가 재생됩니다.',
-              style: TextStyle(fontSize: 13.sp, color: Colors.grey),
-            ),
+         
             SizedBox(height: 20.h),
 
             SizedBox(
