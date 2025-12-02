@@ -1,25 +1,22 @@
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'core/route/go_router.dart';
+import 'core/route/route.dart'; // routerProvider import
 import 'core/theme/theme.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
 
+  // route.dart에서 이 키를 참조하므로 static으로 유지해야 합니다.
+  static final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
   @override
   ConsumerState<App> createState() => _AppState();
-
-  static final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey();
-
 }
 
 class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
-
-  GlobalKey<NavigatorState> get globalKey => App.globalNavigatorKey;
 
   @override
   void initState() {
@@ -34,33 +31,10 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
-
-    return ScreenUtilInit(
-      designSize: Size(width, height),
-      child: MaterialApp.router(
-        debugShowMaterialGrid: false,
-        debugShowCheckedModeBanner: false,
-        showPerformanceOverlay: false,
-        theme: buildThemeData(context),
-        routeInformationProvider: router.routeInformationProvider,
-        routeInformationParser: router.routeInformationParser,
-        routerDelegate: router.routerDelegate,
-      ),
-    );
-  }
-
-
-
-  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
         debugPrint("========= AppLifecycleState.resumed =========");
-        break;
-      case AppLifecycleState.inactive:
         break;
       case AppLifecycleState.paused:
         debugPrint("========= AppLifecycleState.paused =========");
@@ -74,5 +48,22 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final router = ref.watch(routerProvider);
 
+    return ScreenUtilInit(
+      // (일반적인 모바일 기준: 375 x 812)
+      designSize: const Size(375, 812),
+      minTextAdapt: true,
+      builder: (context, child) {
+        return MaterialApp.router(
+          title: 'Best Pick',
+          debugShowCheckedModeBanner: false,
+          theme: buildThemeData(context),
+          routerConfig: router,
+        );
+      },
+    );
+  }
 }

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart'; // 💡 Functions 추가
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart'; // 💡 PlatformException을 위해 별칭 없이 import
+import 'package:flutter/services.dart' as kakao;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao; // 💡 카카오 SDK
@@ -168,12 +169,14 @@ class AuthRepo {
       // 1. 카카오 로그인 시도 (카카오톡 앱 or 계정)
       kakao.OAuthToken token;
 
+      // 💡 kakao.isKakaoTalkInstalled() 사용
       if (await kakao.isKakaoTalkInstalled()) {
         try {
           token = await kakao.UserApi.instance.loginWithKakaoTalk();
         } catch (error) {
           // 사용자가 취소했거나 에러 발생 시 계정 로그인 시도
-          if (error is PlatformException && error.code == 'CANCELED') {
+          // 💡 flutter/services.dart도 'kakao'로 import 했으므로 kakao.PlatformException 사용
+          if (error is kakao.PlatformException && error.code == 'CANCELED') {
             return null;
           }
           token = await kakao.UserApi.instance.loginWithKakaoAccount();
@@ -183,12 +186,13 @@ class AuthRepo {
       }
 
       // 2. Cloud Functions 호출하여 Firebase Custom Token 교환
-      // (OIDC 설정을 안 해도 되므로 비용 문제 해결!)
+      // (functions/index.js의 kakaoCustomAuth 함수 호출)
       final HttpsCallable callable = _functions.httpsCallable('kakaoCustomAuth');
       final result = await callable.call(<String, dynamic>{
         'token': token.accessToken, // 카카오 액세스 토큰 전달
       });
 
+      // Functions에서 반환한 커스텀 토큰 추출
       final String firebaseCustomToken = result.data['firebaseToken'];
 
       // 3. 커스텀 토큰으로 Firebase 로그인
@@ -203,7 +207,7 @@ class AuthRepo {
         // 🎯 신규 유저: 초기화된 모델 반환 (회원가입 유도)
         return UserModel.initial(
             uid: user.uid,
-            // 카카오 이메일이 없을 수 있으므로 대비
+            // 카카오 이메일이 없을 수 있으므로 대비용 ID 생성
             email: user.email ?? 'kakao_${user.uid.replaceAll(":", "")}@no.email',
             isSocialLogin: true);
       }
@@ -212,7 +216,7 @@ class AuthRepo {
 
     } catch (e) {
       // 카카오 로그인 실패 처리
-      if (e is PlatformException && e.code == 'CANCELED') {
+      if (e is kakao.PlatformException && e.code == 'CANCELED') {
         return null;
       }
       print('Kakao Login Error: $e');

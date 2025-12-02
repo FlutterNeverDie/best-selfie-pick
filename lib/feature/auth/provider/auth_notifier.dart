@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:selfie_pick/feature/auth/provider/repository/auth_repo.dart';
+import 'package:selfie_pick/feature/auth/provider/repository/repo_auth.dart';
 import 'package:selfie_pick/feature/auth/provider/state/auth.state.dart';
 
 import '../../../model/m_user.dart';
