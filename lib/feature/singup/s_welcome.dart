@@ -21,7 +21,6 @@ class WelcomeScreen extends ConsumerStatefulWidget {
   ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-// 💡 [수정] 컨트롤러가 2개 이상이므로 TickerProviderStateMixin 사용
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProviderStateMixin {
 
   // 1. 화면 등장 애니메이션
@@ -29,7 +28,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
   late final Animation<double> _fadeAnimation;
   late final Animation<Offset> _slideAnimation;
 
-  // 2. 💡 [신규] 아이콘 회전 애니메이션
+  // 2. 아이콘 회전 애니메이션
   late final AnimationController _rotationController;
 
   @override
@@ -57,17 +56,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
 
     _entranceController.forward();
 
-    // --- 💡 회전 애니메이션 설정 ---
+    // --- 회전 애니메이션 설정 ---
     _rotationController = AnimationController(
-      duration: const Duration(seconds: 10), // 10초에 한 바퀴 (천천히 우아하게)
+      duration: const Duration(seconds: 10),
       vsync: this,
-    )..repeat(); // 무한 반복
+    )..repeat();
   }
 
   @override
   void dispose() {
     _entranceController.dispose();
-    _rotationController.dispose(); // 메모리 해제
+    _rotationController.dispose();
     super.dispose();
   }
 
@@ -76,10 +75,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
       await signInFunction();
     } catch (e) {
       debugPrint('$provider 로그인 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$provider 로그인 실패: ${e.toString().split(':').last.trim()}')),
+        );
+      }
     }
   }
 
-  // 🎨 소셜 버튼 빌더 (Bouncing 효과 적용)
+  // 🎨 소셜 버튼 빌더
   Widget _buildSocialButton({
     required String text,
     required Color backgroundColor,
@@ -90,7 +94,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
   }) {
     final isLoading = ref.watch(authProvider).isLoading;
 
-    // 💡 [적용] 클릭 시 작아지는 애니메이션 위젯으로 감싸기
     return _BouncingButton(
       onPressed: isLoading ? null : onPressed,
       child: Padding(
@@ -102,7 +105,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
             color: backgroundColor,
             borderRadius: BorderRadius.circular(12.r),
             border: hasBorder ? Border.all(color: Colors.grey.shade300) : null,
-            // 쉐도우는 로딩 아닐 때만
             boxShadow: (!isLoading && !hasBorder) ? [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -179,7 +181,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ).createShader(bounds),
-                                // 💡 [적용] RotationTransition으로 아이콘 회전
                                 child: RotationTransition(
                                   turns: _rotationController,
                                   child: Icon(
@@ -219,7 +220,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
                           children: [
                             SizedBox(height: 32.h),
 
-                            // 카카오 로그인
+                            // 🟡 카카오 로그인
                             _buildSocialButton(
                               text: 'Kakao로 계속하기',
                               backgroundColor: const Color(0xFFFEE500),
@@ -228,7 +229,25 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
                               onPressed: () => _handleSocialSignIn('Kakao', authNotifier.signInWithKakao),
                             ),
 
-                            // 구글 로그인
+                            // 🟢 [신규] 네이버 로그인 추가
+                            _buildSocialButton(
+                              text: 'Naver로 계속하기',
+                              backgroundColor: const Color(0xFF03C75A), // 네이버 그린
+                              textColor: Colors.white,
+                              // 네이버 로고 대신 심플한 N 텍스트 아이콘 사용
+                              icon: Text(
+                                'N',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 20.sp,
+                                  fontFamily: 'sans-serif', // 기본 폰트 사용
+                                ),
+                              ),
+                              onPressed: () => _handleSocialSignIn('Naver', authNotifier.signInWithNaver),
+                            ),
+
+                            // ⚪️ 구글 로그인
                             _buildSocialButton(
                               text: 'Google로 계속하기',
                               backgroundColor: Colors.white,
@@ -238,7 +257,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
                               onPressed: () => _handleSocialSignIn('Google', authNotifier.signInWithGoogle),
                             ),
 
-                            // 애플 로그인 (안드로이드 숨김)
+                            // ⚫️ 애플 로그인 (안드로이드 숨김)
                             if (!isAndroid)
                               _buildSocialButton(
                                 text: 'Apple로 계속하기',
@@ -254,7 +273,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // 💡 텍스트 버튼에도 Bouncing 효과 적용
                                 _BouncingButton(
                                   onPressed: () {
                                     authNotifier.resetError();
@@ -310,7 +328,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
   }
 }
 
-// 💡 [신규 위젯] 눌렀을 때 작아지는 애니메이션 버튼
+// 눌렀을 때 작아지는 애니메이션 버튼
 class _BouncingButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;
@@ -333,9 +351,9 @@ class _BouncingButtonState extends State<_BouncingButton> with SingleTickerProvi
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100), // 반응 속도 빠르게
+      duration: const Duration(milliseconds: 100),
       lowerBound: 0.0,
-      upperBound: 0.04, // 4% 정도만 작아지게 (0.96 scale)
+      upperBound: 0.04,
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(_controller);
   }
