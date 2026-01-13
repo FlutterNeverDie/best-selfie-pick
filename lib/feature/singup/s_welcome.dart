@@ -315,7 +315,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
                                     ),
                                   ],
                                 ),
-
                                 SizedBox(height: 20.h),
                               ],
                             ),
