@@ -141,189 +141,206 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with TickerProvid
     final authNotifier = ref.read(authProvider.notifier);
     final bool isAndroid = Platform.isAndroid;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 40.h),
+    final bool isLoading = ref.watch(authProvider.select((s) => s.isLoading));
 
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // --- 1. 상단 로고 영역 ---
-                        Column(
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.white,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 40.h),
+
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              padding: EdgeInsets.all(24.w),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColor.primary.withOpacity(0.2),
-                                    blurRadius: 30,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: ShaderMask(
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [AppColor.primary, Colors.purpleAccent],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ).createShader(bounds),
-                                child: RotationTransition(
-                                  turns: _rotationController,
-                                  child: Icon(
-                                    Icons.camera,
-                                    size: 70.sp,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(height: 30.h),
-
-                            Text(
-                              'Best Pick',
-                              style: TextStyle(
-                                fontSize: 36.sp,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.black87,
-                                letterSpacing: -1.0,
-                              ),
-                            ),
-                            SizedBox(height: 10.h),
-                            Text(
-                              '우리 동네 베스트 셀카 챌린지',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // --- 2. 하단 버튼 영역 ---
-                        Column(
-                          children: [
-                            SizedBox(height: 32.h),
-
-                            // 🟡 카카오 로그인
-                            _buildSocialButton(
-                              text: 'Kakao로 계속하기',
-                              backgroundColor: const Color(0xFFFEE500),
-                              textColor: const Color(0xFF191919),
-                              icon: const FaIcon(FontAwesomeIcons.solidComment, color: Color(0xFF191919), size: 20),
-                              onPressed: () => _handleSocialSignIn('Kakao', authNotifier.signInWithKakao),
-                            ),
-
-                            // 🟢 [신규] 네이버 로그인 추가
-                            _buildSocialButton(
-                              text: 'Naver로 계속하기',
-                              backgroundColor: const Color(0xFF03C75A), // 네이버 그린
-                              textColor: Colors.white,
-                              // 네이버 로고 대신 심플한 N 텍스트 아이콘 사용
-                              icon: Text(
-                                'N',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 20.sp,
-                                  fontFamily: 'sans-serif', // 기본 폰트 사용
-                                ),
-                              ),
-                              onPressed: () => _handleSocialSignIn('Naver', authNotifier.signInWithNaver),
-                            ),
-
-                            // ⚪️ 구글 로그인
-                            _buildSocialButton(
-                              text: 'Google로 계속하기',
-                              backgroundColor: Colors.white,
-                              textColor: Colors.black87,
-                              hasBorder: true,
-                              icon: const FaIcon(FontAwesomeIcons.google, color: Colors.black87, size: 20),
-                              onPressed: () => _handleSocialSignIn('Google', authNotifier.signInWithGoogle),
-                            ),
-
-                            // ⚫️ 애플 로그인 (안드로이드 숨김)
-                            if (!isAndroid)
-                              _buildSocialButton(
-                                text: 'Apple로 계속하기',
-                                backgroundColor: Colors.black,
-                                textColor: Colors.white,
-                                icon: const FaIcon(FontAwesomeIcons.apple, color: Colors.white, size: 24),
-                                onPressed: () => _handleSocialSignIn('Apple', authNotifier.signInWithApple),
-                              ),
-
-                            SizedBox(height: 16.h),
-
-                            // 이메일 로그인/가입
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            // --- 1. 상단 로고 영역 ---
+                            Column(
                               children: [
-                                _BouncingButton(
-                                  onPressed: () {
-                                    authNotifier.resetError();
-                                    context.goNamed(EmailSignupScreen.routeName);
-                                  },
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.w),
-                                    child: Text(
-                                      '이메일로 가입',
-                                      style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 14.sp
+                                Container(
+                                  padding: EdgeInsets.all(24.w),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColor.primary.withOpacity(0.2),
+                                        blurRadius: 30,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ShaderMask(
+                                    shaderCallback: (bounds) => LinearGradient(
+                                      colors: [AppColor.primary, Colors.purpleAccent],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(bounds),
+                                    child: RotationTransition(
+                                      turns: _rotationController,
+                                      child: Icon(
+                                        Icons.camera,
+                                        size: 70.sp,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  height: 12.h,
-                                  width: 1,
-                                  color: Colors.grey.shade300,
-                                  margin: EdgeInsets.symmetric(horizontal: 4.w),
+
+                                SizedBox(height: 30.h),
+
+                                Text(
+                                  'Best Pick',
+                                  style: TextStyle(
+                                    fontSize: 36.sp,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black87,
+                                    letterSpacing: -1.0,
+                                  ),
                                 ),
-                                _BouncingButton(
-                                  onPressed: () => context.goNamed(LoginScreen.routeName),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.w),
-                                    child: Text(
-                                      '로그인',
-                                      style: TextStyle(
-                                          color: AppColor.primary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14.sp
-                                      ),
-                                    ),
+                                SizedBox(height: 10.h),
+                                Text(
+                                  '우리 동네 베스트 셀카 챌린지',
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    color: Colors.grey.shade500,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
                             ),
 
-                            SizedBox(height: 20.h),
+                            // --- 2. 하단 버튼 영역 ---
+                            Column(
+                              children: [
+                                SizedBox(height: 32.h),
+
+                                // 🟡 카카오 로그인
+                                _buildSocialButton(
+                                  text: 'Kakao로 계속하기',
+                                  backgroundColor: const Color(0xFFFEE500),
+                                  textColor: const Color(0xFF191919),
+                                  icon: const FaIcon(FontAwesomeIcons.solidComment, color: Color(0xFF191919), size: 20),
+                                  onPressed: () => _handleSocialSignIn('Kakao', authNotifier.signInWithKakao),
+                                ),
+
+                                // 🟢 [신규] 네이버 로그인 추가
+                                _buildSocialButton(
+                                  text: 'Naver로 계속하기',
+                                  backgroundColor: const Color(0xFF03C75A), // 네이버 그린
+                                  textColor: Colors.white,
+                                  // 네이버 로고 대신 심플한 N 텍스트 아이콘 사용
+                                  icon: Text(
+                                    'N',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 20.sp,
+                                      fontFamily: 'sans-serif', // 기본 폰트 사용
+                                    ),
+                                  ),
+                                  onPressed: () => _handleSocialSignIn('Naver', authNotifier.signInWithNaver),
+                                ),
+
+                                // ⚪️ 구글 로그인
+                                _buildSocialButton(
+                                  text: 'Google로 계속하기',
+                                  backgroundColor: Colors.white,
+                                  textColor: Colors.black87,
+                                  hasBorder: true,
+                                  icon: const FaIcon(FontAwesomeIcons.google, color: Colors.black87, size: 20),
+                                  onPressed: () => _handleSocialSignIn('Google', authNotifier.signInWithGoogle),
+                                ),
+
+                                // ⚫️ 애플 로그인 (안드로이드 숨김)
+                                if (!isAndroid)
+                                  _buildSocialButton(
+                                    text: 'Apple로 계속하기',
+                                    backgroundColor: Colors.black,
+                                    textColor: Colors.white,
+                                    icon: const FaIcon(FontAwesomeIcons.apple, color: Colors.white, size: 24),
+                                    onPressed: () => _handleSocialSignIn('Apple', authNotifier.signInWithApple),
+                                  ),
+
+                                SizedBox(height: 16.h),
+
+                                // 이메일 로그인/가입
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    _BouncingButton(
+                                      onPressed: () {
+                                        authNotifier.resetError();
+                                        context.goNamed(EmailSignupScreen.routeName);
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.w),
+                                        child: Text(
+                                          '이메일로 가입',
+                                          style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 14.sp
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      height: 12.h,
+                                      width: 1,
+                                      color: Colors.grey.shade300,
+                                      margin: EdgeInsets.symmetric(horizontal: 4.w),
+                                    ),
+                                    _BouncingButton(
+                                      onPressed: () => context.goNamed(LoginScreen.routeName),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.w),
+                                        child: Text(
+                                          '로그인',
+                                          style: TextStyle(
+                                              color: AppColor.primary,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14.sp
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: 20.h),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
+              );
+            },
+          ),
+        ),
+
+        if (isLoading)
+          Container(
+            color: Colors.white.withOpacity(0.8), // 살짝 불투명한 배경
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColor.primary,
+                strokeWidth: 3,
               ),
             ),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 }
