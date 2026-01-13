@@ -2,76 +2,107 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-
+    <!-- 1. 구글 로그인 클라이언트 ID (변수 적용) -->
     <key>GIDClientID</key>
-	<string>203804258577-gts8mmaoc6g5m070uilhg874q0pot6q2.apps.googleusercontent.com</string>
+    <string>$(GOOGLE_CLIENT_ID)</string>
 
+    <!-- 2. 네이버 로그인 v2.0.0 필수 설정 -->
+    <!-- 주의: v2.0.0부터는 kConsumerKey 대신 NidClientID 등을 사용합니다. -->
+    <key>NidClientID</key>
+    <string>$(NAVER_CLIENT_ID)</string>
+    <key>NidClientSecret</key>
+    <string>$(NAVER_CLIENT_SECRET)</string>
+    <key>NidAppName</key>
+    <string>베스트 픽</string>
+    <key>NidUrlScheme</key>
+    <string>$(NAVER_URL_SCHEME)</string>
 
-
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>ko</string>
-	<key>CFBundleDisplayName</key>
-	<string>베스트픽</string>
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>베스트픽</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleURLTypes</key>
+    <!-- 네이버 앱 전환 허용 목록 -->
+    <key>LSApplicationQueriesSchemes</key>
     <array>
+        <string>naversearchapp</string>
+        <string>naversearchthirdlogin</string>
+    </array>
+
+    <!-- 3. URL Types: 구글 & 네이버 스킴 등록 -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <!-- 구글 URL 스킴 -->
         <dict>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>CFBundleURLSchemes</key>
             <array>
-	            <string>com.googleusercontent.apps.203804258577-gts8mmaoc6g5m070uilhg874q0pot6q2</string>
+                <string>$(GOOGLE_URL_SCHEME)</string>
+            </array>
+        </dict>
+        <!-- 네이버 URL 스킴 -->
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>$(NAVER_URL_SCHEME)</string>
             </array>
         </dict>
     </array>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
 
-	<key>GADApplicationIdentifier</key>
+    <!-- 기본 설정 -->
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ko</string>
+    <key>CFBundleDisplayName</key>
+    <string>베스트픽</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>베스트픽</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleVersion</key>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+
+    <!-- AdMob 설정 -->
+    <key>GADApplicationIdentifier</key>
     <string>ca-app-pub-3940256099942544~3347511713</string>
 
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-
-	<key>NSPhotoLibraryUsageDescription</key>
+    <!-- 권한 설정 -->
+    <key>NSPhotoLibraryUsageDescription</key>
     <string>베스트 픽 콘테스트에 참가할 사진을 업로드하기 위해 갤러리 접근 권한이 필요합니다.</string>
-
     <key>NSCameraUsageDescription</key>
     <string>새로운 셀카를 촬영하여 콘테스트에 바로 등록하기 위해 카메라 접근 권한이 필요합니다.</string>
+
+    <!-- 화면 회전 설정 -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+       <string>UIInterfaceOrientationPortrait</string>
+       <string>UIInterfaceOrientationLandscapeLeft</string>
+       <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+       <string>UIInterfaceOrientationPortrait</string>
+       <string>UIInterfaceOrientationPortraitUpsideDown</string>
+       <string>UIInterfaceOrientationLandscapeLeft</string>
+       <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
 
 </dict>
 </plist>

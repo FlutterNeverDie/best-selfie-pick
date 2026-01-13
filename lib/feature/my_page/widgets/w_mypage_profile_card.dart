@@ -20,130 +20,144 @@ class WMyPageProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 💡 닉네임이 없을 경우 이메일 앞부분 사용
+    final String displayName = user?.nickname.isNotEmpty == true
+        ? user!.nickname
+        : (user?.email.split('@').first ?? '로그인 필요');
+
     return Container(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 28.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.w), // 둥근 모서리
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(24.w), // 토스 스타일의 넉넉한 라운딩
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. 프로필 아바타
-          Container(
-            width: 64.w,
-            height: 64.w,
-            decoration: BoxDecoration(
-              color: AppColor.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColor.primary.withOpacity(0.2), width: 2.w),
-            ),
-            child: Center(
-              child: Text(
-                user?.email.substring(0, 1).toUpperCase() ?? '?',
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  color: AppColor.primary,
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              // 1. 프로필 아바타 (더 차분한 톤의 원형)
+              Container(
+                width: 56.w,
+                height: 56.w,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    displayName.substring(0, 1).toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          SizedBox(width: 20.w),
+              SizedBox(width: 16.w),
 
-          // 2. 유저 정보
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user?.email ?? '로그인 필요',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 10.h),
-
-                // 뱃지 Row
-                Row(
+              // 2. 유저 정보 (닉네임 메인 + 이메일 서브)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 📍 채널 뱃지 (클릭 가능)
-                    GestureDetector(
-                      onTap: () => _showChannelChangeDialog(context),
-                      child: _buildInfoBadge(
-                        icon: Icons.location_on_rounded,
-                        text: user?.channel == 'NotSet' ? '채널 설정' : (user?.channel ?? '미설정'),
-                        color: Colors.white,
-                        bgColor: AppColor.primary,
-                        showEditIcon: true, // 연필 아이콘
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        letterSpacing: -0.8,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-
-                    SizedBox(width: 8.w),
-
-                    // ⚧ 성별 뱃지
-                    _buildInfoBadge(
-                      icon: user?.gender == 'Female' ? Icons.female : Icons.male,
-                      text: user?.gender == 'Female'
-                          ? '여성'
-                          : (user?.gender == 'Male' ? '남성' : '미설정'),
-                      color: user?.gender == 'Female' ? Colors.pinkAccent : Colors.blueAccent,
-                      bgColor: (user?.gender == 'Female' ? Colors.pink : Colors.blue).withOpacity(0.1),
+                    SizedBox(height: 2.h), // 간격을 더 좁혀서 한 그룹으로 보이게 함
+                    Text(
+                      user?.email ?? '',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey.shade500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              // 💡 우측 화살표 제거 완료
+            ],
           ),
-        ],
-      ),
-    );
-  }
 
-  // 뱃지 공통 위젯
-  Widget _buildInfoBadge({
-    required IconData icon,
-    required String text,
-    required Color color,
-    required Color bgColor,
-    bool showEditIcon = false,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8.w),
-        boxShadow: showEditIcon
-            ? [BoxShadow(color: bgColor.withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 2))]
-            : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14.sp, color: color),
-          SizedBox(width: 4.w),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+          SizedBox(height: 24.h),
+          Divider(height: 1, thickness: 1, color: Colors.grey.shade50),
+          SizedBox(height: 20.h),
+
+          // 3. 하단 활동 정보 뱃지
+          Row(
+            children: [
+              // 📍 활동 채널 (클릭 가능한 '버튼' 형태)
+              GestureDetector(
+                onTap: () => _showChannelChangeDialog(context),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: AppColor.primary.withOpacity(0.08), // 너무 진하지 않게 변경
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.location_on_rounded, size: 14.sp, color: AppColor.primary),
+                      SizedBox(width: 4.w),
+                      Text(
+                        user?.channel == 'NotSet' ? '채널 설정' : (user?.channel ?? '미설정'),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColor.primary,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      Icon(Icons.edit_rounded, size: 12.sp, color: AppColor.primary.withOpacity(0.5)),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 10.w),
+
+              // ⚧ 성별 (클릭 불가능한 '정보' 형태)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50, // 무채색 배경으로 버튼과 차별화
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                        user?.gender == 'Female' ? Icons.female : Icons.male,
+                        size: 14.sp,
+                        color: user?.gender == 'Female' ? Colors.pink.shade300 : Colors.blue.shade300
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      user?.gender == 'Female' ? '여성' : (user?.gender == 'Male' ? '남성' : '미설정'),
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600, // 차분한 텍스트 색상
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          if (showEditIcon) ...[
-            SizedBox(width: 4.w),
-            Icon(Icons.edit_rounded, size: 12.sp, color: color.withOpacity(0.8)),
-          ]
         ],
       ),
     );

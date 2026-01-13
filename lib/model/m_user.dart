@@ -15,6 +15,9 @@ class UserModel {
   /// 사용자 로그인 이메일 주소
   final String email;
 
+  /// 닉네임
+  final String nickname;
+
   /// 푸시 알림 발송을 위한 FCM(Firebase Cloud Messaging) 토큰
   /// - null일 경우 알림을 받을 수 없습니다.
   final String? fcmToken;
@@ -24,8 +27,8 @@ class UserModel {
   // ====================================================
 
   /// 사용자 성별
-  /// - 'Female': 여성 (투표 및 참가 가능)
-  /// - 'Male': 남성 (투표 및 참가 불가, 관전만 가능할 수 있음)
+  /// - 'Female': 여성
+  /// - 'Male': 남성
   /// - 'NotSet': 초기 미설정 상태
   final String gender;
 
@@ -79,6 +82,7 @@ class UserModel {
   const UserModel({
     required this.uid,
     required this.email,
+    required this.nickname,
     this.fcmToken,
     required this.gender,
     required this.channel,
@@ -107,12 +111,14 @@ class UserModel {
   factory UserModel.initial({
     required String uid,
     required String email,
+
     bool isSocialLogin = false,
     bool isAdmin = false,
   }) {
     return UserModel(
       uid: uid,
       email: email,
+      nickname: '',
       fcmToken: null,
       gender: 'NotSet',
       channel: 'NotSet',
@@ -133,7 +139,8 @@ class UserModel {
   /// 프로필 정보(성별 또는 채널)가 미설정 상태인지 확인합니다.
   ///
   /// true일 경우 사용자는 추가 정보를 입력해야 앱의 주요 기능을 사용할 수 있습니다.
-  bool get isProfileIncomplete => gender == 'NotSet' || channel == 'NotSet';
+  bool get isProfileIncomplete =>
+      nickname.isEmpty || gender == 'NotSet' || channel == 'NotSet';
 
   /// Firestore 문서 데이터(Map)를 [UserModel] 객체로 변환합니다.
   ///
@@ -154,6 +161,7 @@ class UserModel {
     return UserModel(
       uid: map['uid'] as String,
       email: map['email'] as String,
+      nickname: map['nickname'] as String? ?? '',
       fcmToken: map['fcmToken'] as String?,
       gender: map['gender'] as String,
       channel: map['channel'] as String,
@@ -178,6 +186,7 @@ class UserModel {
     return {
       'uid': uid,
       'email': email,
+      'nickname': nickname,
       'fcmToken': fcmToken,
       'gender': gender,
       'channel': channel,
@@ -199,6 +208,7 @@ class UserModel {
   UserModel copyWith({
     String? uid,
     String? email,
+    String? nickname,
     String? fcmToken,
     String? gender,
     String? channel,
@@ -216,6 +226,7 @@ class UserModel {
     return UserModel(
       uid: uid ?? this.uid,
       email: email ?? this.email,
+      nickname: nickname ?? this.nickname,
       fcmToken: fcmToken ?? this.fcmToken,
       gender: gender ?? this.gender,
       channel: channel ?? this.channel,
@@ -236,7 +247,7 @@ class UserModel {
   /// 객체의 문자열 표현을 반환합니다. (디버깅 용도)
   @override
   String toString() {
-    return 'UserModel(uid: $uid, email: $email, gender: $gender, channel: $channel, '
+    return 'UserModel(uid: $uid, email: $email, nickName $nickname, gender: $gender, channel: $channel, '
         'honor: $honorScore, points: $points, badges: G:$badgeGold/S:$badgeSilver/B:$badgeBronze)';
   }
 }

@@ -26,6 +26,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _nicknameController = TextEditingController();
 
   String? _selectedChannel;
   String _selectedGender = 'Female';
@@ -33,11 +34,16 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
+  // 💡 닉네임 중복 확인 관련 상태
+  bool _isNicknameChecked = false;
+  String _checkedNickname = '';
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _nicknameController.dispose();
     super.dispose();
   }
 
@@ -53,14 +59,12 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
   // --- 🎯  선택 다이얼로그 호출 ---
   Future<void> _showChannelDialog() async {
-    // 다이얼로그를 띄우고 결과를 기다림
     final result = await showDialog<String>(
       context: context,
       routeSettings:  const RouteSettings(name: ChannelSelectionDialog.routeName),
       builder: (context) => ChannelSelectionDialog(initialChannel: _selectedChannel),
     );
 
-    // 결과가 있으면 상태 업데이트
     if (result != null) {
       setState(() {
         _selectedChannel = result;
@@ -68,7 +72,41 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     }
   }
 
-  // --- 🎯 1단계 핸들러 ---
+  // --- 🎯 닉네임 중복 확인 핸들러 ---
+  Future<void> _handleNicknameCheck() async {
+    final nickname = _nicknameController.text.trim();
+    if (nickname.isEmpty) {
+      _showMessage('닉네임을 입력해주세요.');
+      return;
+    }
+
+    // 최소 2자 이상 권장 등 추가 정책 가능
+    if (nickname.length < 2) {
+      _showMessage('닉네임은 최소 2자 이상이어야 합니다.');
+      return;
+    }
+
+    try {
+      final isAvailable = await ref.read(authProvider.notifier).checkNicknameAvailability(nickname);
+
+      if (isAvailable) {
+        setState(() {
+          _isNicknameChecked = true;
+          _checkedNickname = nickname;
+        });
+        _showMessage('사용 가능한 닉네임입니다.');
+      } else {
+        setState(() {
+          _isNicknameChecked = false;
+        });
+        _showMessage('이미 사용 중인 닉네임입니다.');
+      }
+    } catch (e) {
+      _showMessage('닉네임 확인 중 오류가 발생했습니다.');
+    }
+  }
+
+  // --- 🎯 1단계 핸들러 (이메일/비번 검증) ---
   Future<void> _handleEmailPasswordSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -93,8 +131,16 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     }
   }
 
-  // --- 🎯 2단계 핸들러 ---
+  // --- 🎯 2단계 핸들러 (최종 가입) ---
   Future<void> _handleFinalSignUp() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // 💡 닉네임 중복 확인 여부 체크
+    if (!_isNicknameChecked || _checkedNickname != _nicknameController.text.trim()) {
+      _showMessage('닉네임 중복 확인이 필요합니다.');
+      return;
+    }
+
     if (_selectedChannel == null) {
       _showMessage('채널을 선택해주세요.');
       return;
@@ -103,10 +149,12 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
+      final nickname = _nicknameController.text.trim();
 
       await ref.read(authProvider.notifier).signUp(
         email,
         password,
+        nickname,
         _selectedChannel!,
         _selectedGender,
       );
@@ -154,6 +202,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         Text('이메일', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 8.h),
         TextFormField(
+          key: const ValueKey('signup_email'),
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           style: TextStyle(fontSize: 16.sp),
@@ -166,6 +215,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         Text('비밀번호', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 8.h),
         TextFormField(
+          key: const ValueKey('signup_password'),
           controller: _passwordController,
           obscureText: !_isPasswordVisible,
           style: TextStyle(fontSize: 16.sp),
@@ -183,6 +233,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         SizedBox(height: 12.h),
 
         TextFormField(
+          key: const ValueKey('signup_confirm_password'),
           controller: _confirmPasswordController,
           obscureText: !_isConfirmPasswordVisible,
           style: TextStyle(fontSize: 16.sp),
@@ -248,11 +299,53 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         Text('원활한 활동을 위해 필수 정보를 알려주세요.', style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600)),
         SizedBox(height: 30.h),
 
-        // 💡 채널 선택 (GestureDetector + 다이얼로그)
+        // 💡 1. 닉네임 입력 + 중복확인 버튼
+        Text('닉네임', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+        SizedBox(height: 8.h),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextFormField(
+                key: const ValueKey('signup_nickname'),
+                controller: _nicknameController,
+                maxLines: 11,
+                style: TextStyle(fontSize: 16.sp),
+                decoration: _buildInputDecoration(hintText: '사용할 닉네임', icon: Icons.face_rounded),
+                onChanged: (val) {
+                  if (_isNicknameChecked) {
+                    setState(() => _isNicknameChecked = false);
+                  }
+                },
+                validator: (v) => v == null || v.isEmpty ? '닉네임을 입력해주세요.' : null,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            SizedBox(
+              height: 56.h,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : _handleNicknameCheck,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isNicknameChecked ? Colors.green : Colors.black87,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                ),
+                child: Text(
+                  _isNicknameChecked ? '확인됨' : '중복확인',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.sp),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 24.h),
+
+        // 💡 2. 채널 선택
         Text('채널', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 8.h),
         GestureDetector(
-          onTap: _showChannelDialog, // 다이얼로그 호출
+          onTap: _showChannelDialog,
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
             decoration: BoxDecoration(
@@ -281,7 +374,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
         SizedBox(height: 24.h),
 
-        // 💡 성별 선택 (색상 분기)
+        // 💡 3. 성별 선택
         Text('성별', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 8.h),
         Row(
@@ -292,7 +385,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                 value: 'Female',
                 icon: Icons.female,
                 isSelected: _selectedGender == 'Female',
-                activeColor: AppColor.primary, // 🩷 핑크
+                activeColor: AppColor.primary,
               ),
             ),
             SizedBox(width: 12.w),
@@ -302,7 +395,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                 value: 'Male',
                 icon: Icons.male,
                 isSelected: _selectedGender == 'Male',
-                activeColor: Colors.blueAccent, // 💙 블루 (요청 사항)
+                activeColor: Colors.blueAccent,
               ),
             ),
           ],
@@ -328,15 +421,14 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     );
   }
 
-  // 🎨 성별 선택 버튼 빌더 (activeColor 추가)
+  // 🎨 성별 선택 버튼 빌더
   Widget _buildGenderButton({
     required String label,
     required String value,
     required IconData icon,
     required bool isSelected,
-    required Color activeColor, // 💡 활성화 색상 인자 추가
+    required Color activeColor,
   }) {
-    final color = isSelected ? activeColor : Colors.grey.shade200;
     final textColor = isSelected ? Colors.white : Colors.grey.shade600;
     final borderColor = isSelected ? activeColor : Colors.grey.shade300;
 
@@ -349,7 +441,6 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
           color: isSelected ? activeColor : Colors.white,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: borderColor, width: 1.5),
-          // 선택 시 약간의 그림자
           boxShadow: isSelected ? [
             BoxShadow(
               color: activeColor.withOpacity(0.3),

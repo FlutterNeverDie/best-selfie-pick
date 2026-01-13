@@ -52,6 +52,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        resValue "string", "client_id", localProperties.getProperty('naver.client.id')
+        resValue "string", "client_secret", localProperties.getProperty('naver.client.secret')
+        resValue "string", "client_name", localProperties.getProperty('naver.client.name')
     }
 
     buildTypes {

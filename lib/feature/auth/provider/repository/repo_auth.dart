@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart'; // 💡 Functions 추가
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart'; // 💡 PlatformException을 위해 별칭 없이 import
-import 'package:flutter/services.dart' as kakao;
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao; // 💡 카카오 SDK
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao;
+import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:selfie_pick/core/data/collection.dart';
 import 'package:selfie_pick/model/m_user.dart';
 
@@ -36,6 +37,7 @@ class AuthRepo {
   Future<UserModel> signUp({
     required String email,
     required String password,
+    required String nickname,
     required String region,
     required String gender,
   }) async {
@@ -54,6 +56,7 @@ class AuthRepo {
       final userModel = UserModel(
         uid: user.uid,
         email: email,
+        nickname: nickname,
         gender: gender,
         channel: region,
         channelUpdatedAt: DateTime.now(),
@@ -102,6 +105,7 @@ class AuthRepo {
   Future<UserModel> completeSocialSignUp({
     required String uid,
     required String email,
+    required String nickname,
     required String region,
     required String gender,
   }) async {
@@ -109,6 +113,7 @@ class AuthRepo {
       final userModel = UserModel(
           uid: uid,
           email: email,
+          nickname: nickname,
           gender: gender,
           channel: region,
           channelUpdatedAt: DateTime.now(),
@@ -129,10 +134,12 @@ class AuthRepo {
   // --- 8. 소셜 로그인 함수 (Google) ---
   Future<UserModel?> signInWithGoogle() async {
     try {
-      // 🎯 [유지] v7.x: authenticate() 사용
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
 
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      if (googleUser == null) return null; // 사용자가 취소함
+
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: null,
@@ -154,7 +161,7 @@ class AuthRepo {
 
       return loadedUser;
     } on GoogleSignInException catch (e) {
-      print('Google Sign-in exception: ${e.code}');
+      debugPrint('Google Sign-in exception: ${e.code}');
       return null;
     } on FirebaseAuthException catch (e) {
       throw Exception('Google 로그인 중 오류 발생: ${e.code}');
@@ -163,20 +170,16 @@ class AuthRepo {
     }
   }
 
-  // --- 10. 소셜 로그인 함수 (Kakao) - 🔥 Custom Token 방식 (무료) ---
+  // --- 10. 소셜 로그인 함수 (Kakao) ---
   Future<UserModel?> signInWithKakao() async {
     try {
-      // 1. 카카오 로그인 시도 (카카오톡 앱 or 계정)
       kakao.OAuthToken token;
 
-      // 💡 kakao.isKakaoTalkInstalled() 사용
       if (await kakao.isKakaoTalkInstalled()) {
         try {
           token = await kakao.UserApi.instance.loginWithKakaoTalk();
         } catch (error) {
-          // 사용자가 취소했거나 에러 발생 시 계정 로그인 시도
-          // 💡 flutter/services.dart도 'kakao'로 import 했으므로 kakao.PlatformException 사용
-          if (error is kakao.PlatformException && error.code == 'CANCELED') {
+          if (error is PlatformException && error.code == 'CANCELED') {
             return null;
           }
           token = await kakao.UserApi.instance.loginWithKakaoAccount();
@@ -185,29 +188,22 @@ class AuthRepo {
         token = await kakao.UserApi.instance.loginWithKakaoAccount();
       }
 
-      // 2. Cloud Functions 호출하여 Firebase Custom Token 교환
-      // (functions/index.js의 kakaoCustomAuth 함수 호출)
       final HttpsCallable callable = _functions.httpsCallable('kakaoCustomAuth');
       final result = await callable.call(<String, dynamic>{
-        'token': token.accessToken, // 카카오 액세스 토큰 전달
+        'token': token.accessToken,
       });
 
-      // Functions에서 반환한 커스텀 토큰 추출
       final String firebaseCustomToken = result.data['firebaseToken'];
 
-      // 3. 커스텀 토큰으로 Firebase 로그인
       final UserCredential userCredential =
       await _auth.signInWithCustomToken(firebaseCustomToken);
       final user = userCredential.user!;
 
-      // 4. Firestore 조회
       final loadedUser = await _fetchUserModel(user.uid);
 
       if (loadedUser == null) {
-        // 🎯 신규 유저: 초기화된 모델 반환 (회원가입 유도)
         return UserModel.initial(
             uid: user.uid,
-            // 카카오 이메일이 없을 수 있으므로 대비용 ID 생성
             email: user.email ?? 'kakao_${user.uid.replaceAll(":", "")}@no.email',
             isSocialLogin: true);
       }
@@ -215,12 +211,72 @@ class AuthRepo {
       return loadedUser;
 
     } catch (e) {
-      // 카카오 로그인 실패 처리
-      if (e is kakao.PlatformException && e.code == 'CANCELED') {
+      if (e is PlatformException && e.code == 'CANCELED') {
         return null;
       }
-      print('Kakao Login Error: $e');
+      debugPrint('Kakao Login Error: $e');
       throw Exception('Kakao 로그인 실패: $e');
+    }
+  }
+
+  // --- 11. 소셜 로그인 함수 (Naver) - 💡 [v2.0.0 대응 완료] ---
+  Future<UserModel?> signInWithNaver() async {
+    try {
+      // 1. 네이버 로그인 시도 (NaverLoginResult 반환)
+      final NaverLoginResult result = await FlutterNaverLogin.logIn();
+
+      // 2. 상태 체크
+      if (result.status == NaverLoginStatus.cancelledByUser) {
+        return null; // 사용자 취소
+      }
+
+      if (result.status == NaverLoginStatus.error) {
+        throw Exception('Naver Login SDK Error: ${result.errorMessage}');
+      }
+
+      // 3. 토큰 추출
+      // 💡 NaverLoginResult.accessToken 필드는 NaverAccessToken 객체입니다.
+      // 이 객체 안의 'accessToken' 필드가 실제 문자열 토큰입니다.
+      final NaverAccessToken tokenObj = result.accessToken;
+      final String tokenString = tokenObj.accessToken;
+
+      if (tokenString.isEmpty || tokenString == 'no token') {
+        throw Exception('Naver Access Token is invalid.');
+      }
+
+      // 4. Cloud Functions 호출 (네이버 토큰 -> 파이어베이스 커스텀 토큰)
+      final HttpsCallable callable = _functions.httpsCallable('naverCustomAuth');
+      final cfResult = await callable.call(<String, dynamic>{
+        'token': tokenString, // 실제 토큰 문자열 전달
+      });
+
+      final String firebaseCustomToken = cfResult.data['firebaseToken'];
+
+      // 5. Firebase 로그인
+      final UserCredential userCredential =
+      await _auth.signInWithCustomToken(firebaseCustomToken);
+      final user = userCredential.user!;
+
+      // 6. Firestore 조회
+      final loadedUser = await _fetchUserModel(user.uid);
+
+      if (loadedUser == null) {
+        // 신규 유저
+        return UserModel.initial(
+            uid: user.uid,
+            email: user.email ?? 'naver_${user.uid}@no.email',
+            isSocialLogin: true);
+      }
+
+      return loadedUser;
+
+    } catch (e) {
+      print('Naver Login Error: $e');
+      // 에러 발생 시 상태 초기화를 위해 로그아웃 시도
+      try {
+        await FlutterNaverLogin.logOut();
+      } catch (_) {}
+      throw Exception('Naver 로그인 실패: $e');
     }
   }
 
@@ -237,8 +293,13 @@ class AuthRepo {
     } catch (_) {}
 
     try {
-      // 카카오 토큰 삭제 (로그아웃)
+      // 카카오 토큰 삭제 (필요 시 주석 해제)
       // await kakao.UserApi.instance.logout();
+    } catch (_) {}
+
+    try {
+      // 💡 [추가] 네이버 로그아웃
+      await FlutterNaverLogin.logOut();
     } catch (_) {}
 
     await _auth.signOut();
@@ -360,6 +421,21 @@ class AuthRepo {
     } catch (e) {
       print('Error fetching users info: $e');
       return [];
+    }
+  }
+
+  // repo_auth.dart 에 추가될 로직
+  Future<bool> checkIfNicknameExists(String nickname) async {
+    try {
+      final QuerySnapshot result = await _firestore
+          .collection(MyCollection.USERS)
+          .where('nickname', isEqualTo: nickname)
+          .limit(1)
+          .get();
+
+      return result.docs.isNotEmpty; // 존재하면 true (중복)
+    } catch (e) {
+      throw Exception('닉네임 중복 확인 중 오류 발생: $e');
     }
   }
 }

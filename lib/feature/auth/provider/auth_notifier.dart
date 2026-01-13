@@ -16,7 +16,6 @@ class AuthNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    // ❗️ 중요: build()가 완료된 후 초기화 로직을 시작하도록 Future.microtask으로 감쌉니다.
     // 이는 'Tried to read the state of an uninitialized provider' 오류를 방지합니다.
     Future.microtask(_initializeAuthStatus);
 
@@ -108,17 +107,19 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   /// 4. 이메일 회원가입 함수 (UI에서 호출)
-  Future<void> signUp(String email, String password, String region, String gender) async {
+  Future<void> signUp(String email, String password, String nickname,
+      String region, String gender) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final UserModel userModel = await _repository.signUp(
           email: email,
           password: password,
+          nickname: nickname,
           region: region,
           gender: gender
       );
 
-      print('userModel : $userModel');
+      debugPrint('userModel : $userModel');
 
       state = state.copyWith(user: userModel, isLoading: false);
     } catch (e) {
@@ -128,8 +129,9 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
 
-  // 🎯 신규 추가: 소셜 로그인 완료 후 프로필 업데이트 및 상태 변경
-  Future<void> completeSocialSignUp(String region, String gender) async {
+  // 소셜 로그인 완료 후 프로필 업데이트 및 상태 변경
+  Future<void> completeSocialSignUp(
+      String email, String nickname, String region, String gender) async {
     if (state.user == null || !state.user!.isProfileIncomplete) {
       throw Exception('프로필을 완료할 수 없는 상태입니다. 다시 로그인해주세요.');
     }
@@ -142,7 +144,8 @@ class AuthNotifier extends Notifier<AuthState> {
       // 현재 state.user는 ProfileIncomplete 상태의 UserModel입니다.
       final updatedUser = await repo.completeSocialSignUp(
         uid: state.user!.uid,
-        email: state.user!.email,
+        email: email,
+        nickname: nickname,
         region: region,
         gender: gender,
 
@@ -161,6 +164,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// 5. 구글 로그인 함수 (UI에서 호출)
   Future<void> signInWithGoogle() async {
+
+    debugPrint('구글 로그인 시도');
+
     state = state.copyWith(isLoading: true, error: null);
     try {
       final userModel = await _repository.signInWithGoogle();
@@ -179,6 +185,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// 6. 애플 로그인 함수 (UI에서 호출)
   Future<void> signInWithApple() async {
+
+    debugPrint('애플 로그인 시도');
+
     state = state.copyWith(isLoading: true, error: null);
     try {
       final userModel = await _repository.signInWithApple();
@@ -196,6 +205,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// 7. 카카오 로그인 함수 (UI에서 호출)
   Future<void> signInWithKakao() async {
+
+    debugPrint('카카오 로그인 시도');
+
     state = state.copyWith(isLoading: true, error: null);
     try {
       final userModel = await _repository.signInWithKakao();
@@ -208,6 +220,28 @@ class AuthNotifier extends Notifier<AuthState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
+    }
+  }
+
+  // --- 🟢 네이버 로그인 ---
+  Future<void> signInWithNaver() async {
+
+    debugPrint('네이버 로그인 시도');
+
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final userModel = await _repository.signInWithNaver();
+
+      // 사용자가 취소한 경우
+      if (userModel == null) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      // 로그인 성공
+      state = state.copyWith(user: userModel, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: '네이버 로그인 실패: ${e.toString()}');
     }
   }
 
@@ -250,7 +284,7 @@ class AuthNotifier extends Notifier<AuthState> {
           return false; // 사용 불가 (중복)
 
         case EmailCheckStatus.socialAccountFound:
-        // 💡 소셜 로그인 계정 중복
+        // 소셜 로그인 계정 중복
         // AuthState에 소셜 계정임을 안내하는 에러 메시지 설정
           state = state.copyWith(error: '해당 이메일은 소셜 로그인으로 가입된 계정입니다.\n해당 소셜 로그인 버튼으로 진행해 주세요.');
           return false; // 사용 불가 (소셜 계정 중복)
@@ -334,6 +368,25 @@ class AuthNotifier extends Notifier<AuthState> {
 
   void updateUserLocally(UserModel updatedUser) {
     state = state.copyWith(user: updatedUser);
+  }
+
+
+  //닉네임 중복 확인 함수
+  Future<bool> checkNicknameAvailability(String nickname) async {
+    state = state.copyWith(error: null);
+    try {
+      // Repository의 checkIfNicknameExists 호출 (추후 Repo에 구현 필요)
+      final bool isDuplicated = await _repository.checkIfNicknameExists(nickname);
+
+      if (isDuplicated) {
+        state = state.copyWith(error: '이미 사용 중인 닉네임입니다.');
+        return false; // 사용 불가
+      }
+      return true; // 사용 가능
+    } catch (e) {
+      state = state.copyWith(error: '닉네임 확인 중 오류가 발생했습니다.');
+      rethrow;
+    }
   }
 
 
