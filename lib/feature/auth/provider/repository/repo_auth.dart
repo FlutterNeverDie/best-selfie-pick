@@ -3,6 +3,10 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_naver_login/interface/types/naver_login_result.dart';
+import 'package:flutter_naver_login/interface/types/naver_login_status.dart';
+import 'package:flutter_naver_login/interface/types/naver_token.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao;
@@ -220,63 +224,56 @@ class AuthRepo {
   }
 
   // --- 11. 소셜 로그인 함수 (Naver) - 💡 [v2.0.0 대응 완료] ---
+
   Future<UserModel?> signInWithNaver() async {
     try {
-      // 1. 네이버 로그인 시도 (NaverLoginResult 반환)
-      final NaverLoginResult result = await FlutterNaverLogin.logIn();
+      debugPrint('네이버 로그인 프로세스 시작 (v2.1.1)');
 
-      // 2. 상태 체크
-      if (result.status == NaverLoginStatus.cancelledByUser) {
-        return null; // 사용자 취소
-      }
+      final NaverLoginResult result = await FlutterNaverLogin.logIn();
 
       if (result.status == NaverLoginStatus.error) {
         throw Exception('Naver Login SDK Error: ${result.errorMessage}');
       }
 
-      // 3. 토큰 추출
-      // 💡 NaverLoginResult.accessToken 필드는 NaverAccessToken 객체입니다.
-      // 이 객체 안의 'accessToken' 필드가 실제 문자열 토큰입니다.
-      final NaverAccessToken tokenObj = result.accessToken;
-      final String tokenString = tokenObj.accessToken;
-
-      if (tokenString.isEmpty || tokenString == 'no token') {
-        throw Exception('Naver Access Token is invalid.');
+      if (result.status != NaverLoginStatus.loggedIn) {
+        debugPrint('네이버 로그인 미완료: ${result.status}');
+        return null;
       }
 
-      // 4. Cloud Functions 호출 (네이버 토큰 -> 파이어베이스 커스텀 토큰)
+      final NaverToken? naverToken = result.accessToken;
+      if (naverToken == null || naverToken.accessToken.isEmpty) {
+        throw Exception('네이버 인증에 성공했으나 토큰 정보를 가져오지 못했습니다.');
+      }
+
+      final String tokenString = naverToken.accessToken;
+
       final HttpsCallable callable = _functions.httpsCallable('naverCustomAuth');
+
       final cfResult = await callable.call(<String, dynamic>{
-        'token': tokenString, // 실제 토큰 문자열 전달
+        'token': tokenString,
       });
 
       final String firebaseCustomToken = cfResult.data['firebaseToken'];
 
-      // 5. Firebase 로그인
       final UserCredential userCredential =
-      await _auth.signInWithCustomToken(firebaseCustomToken);
-      final user = userCredential.user!;
+      await _auth.signInWithCustomToken(firebaseCustomToken); // _auth 멤버 변수 사용
 
-      // 6. Firestore 조회
+      final user = userCredential.user!;
       final loadedUser = await _fetchUserModel(user.uid);
 
       if (loadedUser == null) {
-        // 신규 유저
         return UserModel.initial(
-            uid: user.uid,
-            email: user.email ?? 'naver_${user.uid}@no.email',
-            isSocialLogin: true);
+          uid: user.uid,
+          email: user.email ?? 'naver_${user.uid.replaceAll(":", "")}@no.email', // 카카오 스타일로 통일
+          isSocialLogin: true,
+        );
       }
 
       return loadedUser;
 
     } catch (e) {
-      print('Naver Login Error: $e');
-      // 에러 발생 시 상태 초기화를 위해 로그아웃 시도
-      try {
-        await FlutterNaverLogin.logOut();
-      } catch (_) {}
-      throw Exception('Naver 로그인 실패: $e');
+      debugPrint('🚨 [signInWithNaver] 최종 에러: $e');
+      rethrow;
     }
   }
 

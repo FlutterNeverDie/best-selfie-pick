@@ -15,4 +15,7 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <string name="client_id">$(NAVER_CLIENT_ID)</string>
+    <string name="client_secret">$(NAVER_CLIENT_SECRET)</string>
+    <string name="client_name">베스트 픽</string>
 </resources>
